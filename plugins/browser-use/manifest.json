@@ -1,0 +1,110 @@
+{
+  "$schema": "../../schema/plugin.schema.json",
+  "name": "BrowserUse",
+  "vendor": "browser-use.demo",
+  "version": "0.1.0",
+  "summary": "Hand a browsing task to an AI agent",
+  "description": "Describe what you need done on the web and a browser-use agent carries it out in Chrome on this Mac. Each action you add in KeepTalking can be limited to a list of domains, and every run comes back with a signed usage receipt.\n\nReal runs need an LLM provider and API key below; until then the plugin answers with a mock run that says what it would have done.",
+  "symbol": "globe",
+  "tint": "#2F7CF6",
+  "category": "Web",
+  "homepage": "https://github.com/browser-use/browser-use",
+  "contributors": [
+    {
+      "name": "KeepTalking",
+      "role": "maintainer"
+    },
+    {
+      "name": "Browser Use",
+      "role": "upstream",
+      "url": "https://github.com/browser-use/browser-use"
+    }
+  ],
+  "requires": [
+    "browser-use"
+  ],
+  "meters": [
+    {
+      "name": "browser.seconds",
+      "unit": "second",
+      "description": "Wall-clock seconds of browser agent time"
+    }
+  ],
+  "config": [
+    {
+      "key": "llm_provider",
+      "label": "LLM provider",
+      "type": "choice",
+      "default": "anthropic",
+      "choices": [
+        "anthropic",
+        "openai",
+        "openai-compatible"
+      ],
+      "description": "Which provider drives the browser agent; 'openai-compatible' means set an endpoint below"
+    },
+    {
+      "key": "llm_api_key",
+      "label": "LLM API key",
+      "type": "secret",
+      "env": "ANTHROPIC_API_KEY",
+      "description": "Stored in the plugin's state dir (0600); env var works too"
+    },
+    {
+      "key": "llm_base_url",
+      "label": "Endpoint URL",
+      "type": "string",
+      "env": "OPENAI_BASE_URL",
+      "description": "Base URL for OpenRouter, a gateway, or a local OpenAI-compatible server. Blank uses the provider's own endpoint"
+    },
+    {
+      "key": "llm_model",
+      "label": "Model",
+      "type": "string",
+      "description": "Blank uses the provider default (required for openai-compatible)"
+    },
+    {
+      "key": "force_mock",
+      "label": "Force mock runs",
+      "type": "bool",
+      "default": false,
+      "description": "Never launch a real browser, even when configured"
+    }
+  ],
+  "kinds": [
+    {
+      "name": "browser-task",
+      "displayName": "Browser Task",
+      "description": "Run a natural-language browser task with browser-use, confined to this instance's allowed domains",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "What the browser agent should accomplish"
+          }
+        },
+        "required": [
+          "task"
+        ]
+      },
+      "scopeSchema": {
+        "allowedDomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Domains this instance may visit; empty allows any"
+        },
+        "headless": {
+          "type": "boolean",
+          "description": "Run the browser headless"
+        }
+      },
+      "defaultScope": {
+        "allowedDomains": [],
+        "headless": true
+      }
+    }
+  ]
+}

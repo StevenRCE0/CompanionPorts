@@ -1,0 +1,894 @@
+{
+  "$schema": "../../schema/plugin.schema.json",
+  "name": "ComputerUse",
+  "vendor": "keeptalking",
+  "version": "0.1.0",
+  "summary": "Operate Mac apps in the background",
+  "description": "Lets KeepTalking read and operate the apps on this Mac through their accessibility tree and window screenshots, powered by Cua Driver (open source, MIT). Clicks and typing go straight to the target app, so your own cursor and focus stay where they are; a separate agent cursor shows what it is doing.\n\nEach action instance names the apps it may use and whether it may act or only look. KeepTalking itself, password managers and Keychain Access are never reachable; terminals and System Settings only when an instance lists them.\n\nNeeds Accessibility and Screen Recording for KT Companion.",
+  "symbol": "cursorarrow.motionlines",
+  "tint": "#3B82F6",
+  "category": "Automation",
+  "homepage": "https://github.com/trycua/cua",
+  "contributors": [
+    {
+      "name": "KeepTalking",
+      "role": "maintainer"
+    },
+    {
+      "name": "Cua",
+      "role": "upstream",
+      "url": "https://github.com/trycua/cua"
+    }
+  ],
+  "requires": [
+    "cua-driver==0.34.0"
+  ],
+  "permissions": [
+    {
+      "id": "system.accessibility",
+      "reason": "To read the windows of the apps you allow, and click and type in them",
+      "required": true
+    },
+    {
+      "id": "system.screen-recording",
+      "reason": "To see screenshots of those windows",
+      "required": false
+    }
+  ],
+  "meters": [
+    {
+      "name": "computer.observations",
+      "unit": "call",
+      "description": "App lists, window trees and screenshots read"
+    },
+    {
+      "name": "computer.actions",
+      "unit": "call",
+      "description": "Inputs delivered to apps"
+    }
+  ],
+  "config": [
+    {
+      "key": "show_agent_cursor",
+      "label": "Show agent cursor",
+      "type": "bool",
+      "default": true,
+      "description": "Draw Cua's agent cursor while it acts (your own pointer never moves)"
+    },
+    {
+      "key": "screenshot_max_dimension",
+      "label": "Screenshot size",
+      "type": "choice",
+      "default": "1280",
+      "choices": [
+        "1024",
+        "1280",
+        "1568"
+      ],
+      "description": "Long edge of window screenshots sent to the model, in pixels"
+    },
+    {
+      "key": "fast_actions",
+      "label": "Faster actions",
+      "type": "bool",
+      "default": false,
+      "description": "Watch for new windows 200 ms after each action instead of 1 s: quicker, but a stolen focus is reverted for less time"
+    }
+  ],
+  "kinds": [
+    {
+      "name": "computer-use",
+      "displayName": "Computer Use",
+      "description": "Operate macOS apps in the background through Cua Driver — the user keeps their own cursor and focus. Workflow: list_apps (or launch_app) → list_windows → get_window_state(pid, window_id) returns tree rows with element tokens plus a screenshot → act by element_token (click, type_text, set_value, press_key, hotkey, scroll, invoke_menu) → get_window_state again to check the result; tokens go stale after each snapshot. Use x,y (window screenshot pixels) only for surfaces missing from the tree. Windows on another Space can't be read. Apps outside this instance's scope are refused.",
+      "inputSchema": {
+        "type": "object",
+        "title": "computer-use",
+        "properties": {
+          "tool": {
+            "type": "string",
+            "enum": [
+              "list_apps",
+              "list_windows",
+              "get_window_state",
+              "zoom",
+              "launch_app",
+              "click",
+              "type_text",
+              "press_key",
+              "hotkey",
+              "set_value",
+              "scroll",
+              "invoke_menu",
+              "drag",
+              "bring_to_front"
+            ],
+            "description": "Which operation: list_apps — Running and installed apps this instance may use, with pids and windows; list_windows — Windows (id, title, on-screen / other Space) of one app or all permitted apps; get_window_state — A window's accessibility tree (rows with element_token) plus a screenshot; zoom — A close-up JPEG of a window region; follow with from_zoom=true on click; launch_app — Launch (or find) an app in the background and return its pid and windows; click — Click an element (element_token) or window pixels (x,y); type_text — Insert text into the focused field, or the field at element_token / x,y; press_key — Press one key, optionally with modifiers; hotkey — Press a key combination such as cmd+s; set_value — Choose a popup/select option or set a control's value directly; scroll — Scroll at an element or point, or the focused region; invoke_menu — Invoke an app menu item by its label path; drag — Drag between two window points (always briefly takes the foreground); bring_to_front — Activate an app and leave it frontmost (steals focus; rarely needed)"
+          },
+          "action": {
+            "type": "string",
+            "description": "AX action for element clicks: press (default), show_menu, pick, confirm, cancel, open"
+          },
+          "amount": {
+            "type": "integer",
+            "description": "Wheel notches or key repeats (default 3, max 50)"
+          },
+          "bundle_id": {
+            "type": "string",
+            "description": "App bundle ID, e.g. com.apple.TextEdit (preferred over name)"
+          },
+          "button": {
+            "type": "string",
+            "enum": [
+              "left",
+              "right",
+              "middle"
+            ],
+            "description": "Mouse button (default left)"
+          },
+          "by": {
+            "type": "string",
+            "enum": [
+              "line",
+              "page"
+            ],
+            "description": "Scroll granularity (default line)"
+          },
+          "capture_id": {
+            "type": "string",
+            "description": "Bind x,y to this exact capture from get_window_state"
+          },
+          "count": {
+            "type": "integer",
+            "description": "Click count for pixel clicks (2 = double-click)"
+          },
+          "delivery_mode": {
+            "type": "string",
+            "enum": [
+              "background",
+              "foreground"
+            ],
+            "description": "background (default) never fronts the app; foreground briefly fronts the window, acts, then restores the user's app — needs window_id and an instance that allows foreground"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down",
+              "left",
+              "right"
+            ],
+            "description": "Scroll direction"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "description": "Drag duration (default 500)"
+          },
+          "element_token": {
+            "type": "string",
+            "description": "Element handle from the latest get_window_state of that window (e.g. s1a2b3c4d:12). Preferred over x,y; stale after the next snapshot"
+          },
+          "from_x": {
+            "type": "number",
+            "description": "Drag start X (window screenshot pixels)"
+          },
+          "from_y": {
+            "type": "number",
+            "description": "Drag start Y"
+          },
+          "from_zoom": {
+            "type": "boolean",
+            "description": "x,y are in the last zoom image, not the full window"
+          },
+          "include_screenshot": {
+            "type": "boolean",
+            "description": "Attach the window screenshot (default true; false is cheaper when only re-indexing)"
+          },
+          "key": {
+            "type": "string",
+            "description": "Key name: return, tab, escape, space, delete, up/down/left/right, home, end, pageup, pagedown, f1-f12, or a letter/digit"
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Modifier(s) plus one key, e.g. [\"cmd\", \"s\"]"
+          },
+          "max_elements": {
+            "type": "integer",
+            "description": "Cap on tree rows (default 400)"
+          },
+          "modifiers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Held modifiers: cmd, shift, option, ctrl, fn"
+          },
+          "name": {
+            "type": "string",
+            "description": "App display name, used when bundle_id is absent"
+          },
+          "on_screen_only": {
+            "type": "boolean",
+            "description": "Only windows on the current Space"
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Menu labels from the menu bar down, e.g. [\"File\", \"Export as PDF…\"]"
+          },
+          "pid": {
+            "type": "integer",
+            "description": "Target app's process ID (from list_apps or launch_app)"
+          },
+          "query": {
+            "type": "string",
+            "description": "Only return tree rows matching this text (plus their ancestors)"
+          },
+          "text": {
+            "type": "string",
+            "description": "Text to insert at the target's cursor"
+          },
+          "to_x": {
+            "type": "number",
+            "description": "Drag end X"
+          },
+          "to_y": {
+            "type": "number",
+            "description": "Drag end Y"
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Files or URLs the launched app should open"
+          },
+          "value": {
+            "type": "string",
+            "description": "New value: a popup/select option's title, or an AXValue for sliders, steppers, date pickers and plain text fields"
+          },
+          "window_id": {
+            "type": "integer",
+            "description": "Window ID from list_windows / launch_app"
+          },
+          "x": {
+            "type": "number",
+            "description": "X in the window screenshot's pixels (top-left origin)"
+          },
+          "x1": {
+            "type": "number",
+            "description": "Zoom region left (window screenshot pixels)"
+          },
+          "x2": {
+            "type": "number",
+            "description": "Zoom region right"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y in the window screenshot's pixels"
+          },
+          "y1": {
+            "type": "number",
+            "description": "Zoom region top"
+          },
+          "y2": {
+            "type": "number",
+            "description": "Zoom region bottom"
+          }
+        },
+        "required": [
+          "tool"
+        ],
+        "additionalProperties": false
+      },
+      "scopeSchema": {
+        "allowedApps": {
+          "title": "Apps",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Bundle IDs or app names this instance may use; empty allows any app except protected ones"
+        },
+        "control": {
+          "title": "Allow control",
+          "type": "boolean",
+          "description": "Allow clicking, typing and launching; off = look only"
+        },
+        "foreground": {
+          "title": "Allow foreground",
+          "type": "boolean",
+          "description": "Allow briefly taking the foreground (drags, menu shortcuts that ignore background input)"
+        }
+      },
+      "defaultScope": {
+        "allowedApps": [],
+        "control": true,
+        "foreground": false
+      },
+      "subTools": [
+        {
+          "name": "list_apps",
+          "description": "Running and installed apps this instance may use, with pids and windows",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "list_windows",
+          "description": "Windows (id, title, on-screen / other Space) of one app or all permitted apps",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "on_screen_only": {
+                "type": "boolean",
+                "description": "Only windows on the current Space"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "get_window_state",
+          "description": "A window's accessibility tree (rows with element_token) plus a screenshot",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              },
+              "query": {
+                "type": "string",
+                "description": "Only return tree rows matching this text (plus their ancestors)"
+              },
+              "include_screenshot": {
+                "type": "boolean",
+                "description": "Attach the window screenshot (default true; false is cheaper when only re-indexing)"
+              },
+              "max_elements": {
+                "type": "integer",
+                "description": "Cap on tree rows (default 400)"
+              }
+            },
+            "required": [
+              "pid",
+              "window_id"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "zoom",
+          "description": "A close-up JPEG of a window region; follow with from_zoom=true on click",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              },
+              "x1": {
+                "type": "number",
+                "description": "Zoom region left (window screenshot pixels)"
+              },
+              "y1": {
+                "type": "number",
+                "description": "Zoom region top"
+              },
+              "x2": {
+                "type": "number",
+                "description": "Zoom region right"
+              },
+              "y2": {
+                "type": "number",
+                "description": "Zoom region bottom"
+              }
+            },
+            "required": [
+              "pid",
+              "window_id",
+              "x1",
+              "y1",
+              "x2",
+              "y2"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "launch_app",
+          "description": "Launch (or find) an app in the background and return its pid and windows",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "bundle_id": {
+                "type": "string",
+                "description": "App bundle ID, e.g. com.apple.TextEdit (preferred over name)"
+              },
+              "name": {
+                "type": "string",
+                "description": "App display name, used when bundle_id is absent"
+              },
+              "urls": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Files or URLs the launched app should open"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "click",
+          "description": "Click an element (element_token) or window pixels (x,y)",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              },
+              "element_token": {
+                "type": "string",
+                "description": "Element handle from the latest get_window_state of that window (e.g. s1a2b3c4d:12). Preferred over x,y; stale after the next snapshot"
+              },
+              "x": {
+                "type": "number",
+                "description": "X in the window screenshot's pixels (top-left origin)"
+              },
+              "y": {
+                "type": "number",
+                "description": "Y in the window screenshot's pixels"
+              },
+              "from_zoom": {
+                "type": "boolean",
+                "description": "x,y are in the last zoom image, not the full window"
+              },
+              "capture_id": {
+                "type": "string",
+                "description": "Bind x,y to this exact capture from get_window_state"
+              },
+              "button": {
+                "type": "string",
+                "enum": [
+                  "left",
+                  "right",
+                  "middle"
+                ],
+                "description": "Mouse button (default left)"
+              },
+              "count": {
+                "type": "integer",
+                "description": "Click count for pixel clicks (2 = double-click)"
+              },
+              "action": {
+                "type": "string",
+                "description": "AX action for element clicks: press (default), show_menu, pick, confirm, cancel, open"
+              },
+              "modifiers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Held modifiers: cmd, shift, option, ctrl, fn"
+              },
+              "delivery_mode": {
+                "type": "string",
+                "enum": [
+                  "background",
+                  "foreground"
+                ],
+                "description": "background (default) never fronts the app; foreground briefly fronts the window, acts, then restores the user's app — needs window_id and an instance that allows foreground"
+              }
+            },
+            "required": [
+              "pid"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "type_text",
+          "description": "Insert text into the focused field, or the field at element_token / x,y",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "text": {
+                "type": "string",
+                "description": "Text to insert at the target's cursor"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              },
+              "element_token": {
+                "type": "string",
+                "description": "Element handle from the latest get_window_state of that window (e.g. s1a2b3c4d:12). Preferred over x,y; stale after the next snapshot"
+              },
+              "x": {
+                "type": "number",
+                "description": "X in the window screenshot's pixels (top-left origin)"
+              },
+              "y": {
+                "type": "number",
+                "description": "Y in the window screenshot's pixels"
+              },
+              "delivery_mode": {
+                "type": "string",
+                "enum": [
+                  "background",
+                  "foreground"
+                ],
+                "description": "background (default) never fronts the app; foreground briefly fronts the window, acts, then restores the user's app — needs window_id and an instance that allows foreground"
+              }
+            },
+            "required": [
+              "pid",
+              "text"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "press_key",
+          "description": "Press one key, optionally with modifiers",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "key": {
+                "type": "string",
+                "description": "Key name: return, tab, escape, space, delete, up/down/left/right, home, end, pageup, pagedown, f1-f12, or a letter/digit"
+              },
+              "modifiers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Held modifiers: cmd, shift, option, ctrl, fn"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              },
+              "element_token": {
+                "type": "string",
+                "description": "Element handle from the latest get_window_state of that window (e.g. s1a2b3c4d:12). Preferred over x,y; stale after the next snapshot"
+              },
+              "delivery_mode": {
+                "type": "string",
+                "enum": [
+                  "background",
+                  "foreground"
+                ],
+                "description": "background (default) never fronts the app; foreground briefly fronts the window, acts, then restores the user's app — needs window_id and an instance that allows foreground"
+              }
+            },
+            "required": [
+              "pid",
+              "key"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "hotkey",
+          "description": "Press a key combination such as cmd+s",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "keys": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Modifier(s) plus one key, e.g. [\"cmd\", \"s\"]"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              },
+              "element_token": {
+                "type": "string",
+                "description": "Element handle from the latest get_window_state of that window (e.g. s1a2b3c4d:12). Preferred over x,y; stale after the next snapshot"
+              },
+              "delivery_mode": {
+                "type": "string",
+                "enum": [
+                  "background",
+                  "foreground"
+                ],
+                "description": "background (default) never fronts the app; foreground briefly fronts the window, acts, then restores the user's app — needs window_id and an instance that allows foreground"
+              }
+            },
+            "required": [
+              "pid",
+              "keys"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "set_value",
+          "description": "Choose a popup/select option or set a control's value directly",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "value": {
+                "type": "string",
+                "description": "New value: a popup/select option's title, or an AXValue for sliders, steppers, date pickers and plain text fields"
+              },
+              "element_token": {
+                "type": "string",
+                "description": "Element handle from the latest get_window_state of that window (e.g. s1a2b3c4d:12). Preferred over x,y; stale after the next snapshot"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              }
+            },
+            "required": [
+              "pid",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "scroll",
+          "description": "Scroll at an element or point, or the focused region",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "up",
+                  "down",
+                  "left",
+                  "right"
+                ],
+                "description": "Scroll direction"
+              },
+              "amount": {
+                "type": "integer",
+                "description": "Wheel notches or key repeats (default 3, max 50)"
+              },
+              "by": {
+                "type": "string",
+                "enum": [
+                  "line",
+                  "page"
+                ],
+                "description": "Scroll granularity (default line)"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              },
+              "element_token": {
+                "type": "string",
+                "description": "Element handle from the latest get_window_state of that window (e.g. s1a2b3c4d:12). Preferred over x,y; stale after the next snapshot"
+              },
+              "x": {
+                "type": "number",
+                "description": "X in the window screenshot's pixels (top-left origin)"
+              },
+              "y": {
+                "type": "number",
+                "description": "Y in the window screenshot's pixels"
+              },
+              "delivery_mode": {
+                "type": "string",
+                "enum": [
+                  "background",
+                  "foreground"
+                ],
+                "description": "background (default) never fronts the app; foreground briefly fronts the window, acts, then restores the user's app — needs window_id and an instance that allows foreground"
+              }
+            },
+            "required": [
+              "pid",
+              "direction"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "invoke_menu",
+          "description": "Invoke an app menu item by its label path",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              },
+              "path": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Menu labels from the menu bar down, e.g. [\"File\", \"Export as PDF…\"]"
+              }
+            },
+            "required": [
+              "pid",
+              "window_id",
+              "path"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "drag",
+          "description": "Drag between two window points (always briefly takes the foreground)",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              },
+              "from_x": {
+                "type": "number",
+                "description": "Drag start X (window screenshot pixels)"
+              },
+              "from_y": {
+                "type": "number",
+                "description": "Drag start Y"
+              },
+              "to_x": {
+                "type": "number",
+                "description": "Drag end X"
+              },
+              "to_y": {
+                "type": "number",
+                "description": "Drag end Y"
+              },
+              "button": {
+                "type": "string",
+                "enum": [
+                  "left",
+                  "right",
+                  "middle"
+                ],
+                "description": "Mouse button (default left)"
+              },
+              "modifiers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Held modifiers: cmd, shift, option, ctrl, fn"
+              },
+              "duration_ms": {
+                "type": "integer",
+                "description": "Drag duration (default 500)"
+              },
+              "from_zoom": {
+                "type": "boolean",
+                "description": "x,y are in the last zoom image, not the full window"
+              }
+            },
+            "required": [
+              "pid",
+              "window_id",
+              "from_x",
+              "from_y",
+              "to_x",
+              "to_y"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "bring_to_front",
+          "description": "Activate an app and leave it frontmost (steals focus; rarely needed)",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pid": {
+                "type": "integer",
+                "description": "Target app's process ID (from list_apps or launch_app)"
+              },
+              "window_id": {
+                "type": "integer",
+                "description": "Window ID from list_windows / launch_app"
+              }
+            },
+            "required": [
+              "pid"
+            ],
+            "additionalProperties": false
+          }
+        }
+      ],
+      "resources": [
+        {
+          "uri": "skill://cua-driver/SKILL.md",
+          "name": "SKILL.md",
+          "title": "Cua Driver guide",
+          "description": "How to drive a GUI app: snapshot the window, act through element tokens, menu paths or pixels, and verify from fresh state",
+          "mimeType": "text/markdown"
+        },
+        {
+          "uri": "skill://cua-driver/MACOS.md",
+          "name": "MACOS.md",
+          "title": "macOS notes",
+          "description": "macOS specifics: background delivery, Spaces, focus, permissions",
+          "mimeType": "text/markdown"
+        },
+        {
+          "uri": "skill://cua-driver/WORKFLOW.md",
+          "name": "WORKFLOW.md",
+          "title": "Workflow patterns",
+          "description": "Multi-step task patterns and recovery when an action doesn't land",
+          "mimeType": "text/markdown"
+        },
+        {
+          "uri": "skill://cua-driver/VISUAL.md",
+          "name": "VISUAL.md",
+          "title": "Visual grounding",
+          "description": "Working from screenshots and zoom when the accessibility tree is thin",
+          "mimeType": "text/markdown"
+        }
+      ]
+    }
+  ]
+}
