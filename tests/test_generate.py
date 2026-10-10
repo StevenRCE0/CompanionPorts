@@ -48,6 +48,8 @@ class GenerateTests(unittest.TestCase):
         self.assertEqual(plugins[0]["entry"], "plugin.py")
         self.assertEqual(plugins[0]["kinds"], ["echo"])
         self.assertEqual(plugins[0]["sha256"], discovery["actions"][0]["sha256"])
+        self.assertEqual([f["path"] for f in plugins[0]["files"]], ["manifest.json", "plugin.py"])
+        self.assertEqual(plugins[0]["sha256"], generate.folder_hash(plugins[0]["files"]))
 
     def test_hash_follows_content(self):
         before, _ = self.generate()

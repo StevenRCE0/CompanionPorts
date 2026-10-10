@@ -51,8 +51,14 @@ actions and groups them into collections, by slug.
 ## Indexes
 
 On every push to an instance branch, CI validates the content, runs
-`tools/generate.py` and commits the indexes if they changed. Each row carries
-the folder's `sha256`, which the installer checks after fetching it.
+`tools/generate.py` and commits the indexes if they changed.
+
+Each row carries its folder's `sha256`: the sha256 of `<path>\0<file sha256>\n`
+for every file, in path order. `plugins/index.json` also lists the files, so a
+client installs a plugin by fetching each one from
+`<repository>/plugins/<slug>/<path>`, checking every file hash and then the
+folder hash. A repository URL is the base those paths hang off — for the
+built-in one, `https://raw.githubusercontent.com/StevenRCE0/CompanionPorts/builtin/`.
 
 Locally:
 
