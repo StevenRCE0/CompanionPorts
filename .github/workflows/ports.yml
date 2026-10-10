@@ -1,0 +1,53 @@
+name: Ports
+
+# main is the scaffold: it tests the tooling. Every other branch is an
+# instance: its content is validated, and on push its indexes are regenerated
+# and committed. Instances merge main to pick up tooling changes.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test the generator
+        run: python3 -m unittest discover -s tests
+      - name: Validate against the schemas
+        run: |
+          shopt -s nullglob
+          pip install --quiet check-jsonschema==0.29.4
+          validate() { if [ $# -gt 1 ]; then check-jsonschema --schemafile "$@"; fi; }
+          validate schema/plugin.schema.json plugins/*/manifest.json tests/fixtures/plugins/*/manifest.json
+          validate schema/action.schema.json discovery/*/action.json tests/fixtures/discovery/*/action.json
+          validate schema/curation.schema.json curation.json tests/fixtures/curation.json
+      - name: Validate content
+        # Indexes may be stale before a push; they're regenerated after it.
+        run: python3 tools/generate.py --validate
+
+  index:
+    needs: validate
+    if: github.event_name == 'push' && github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Regenerate indexes
+        run: python3 tools/generate.py
+      - name: Commit if changed
+        run: |
+          git add -A discovery/index.json plugins/index.json 2>/dev/null || git add -A discovery/index.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Regenerate indexes"
+          git push

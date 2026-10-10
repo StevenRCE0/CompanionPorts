@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../schema/action.schema.json",
+  "type": "skill",
+  "name": "Meeting notes",
+  "version": "1.0.0",
+  "summary": "Turn a transcript into decisions and follow-ups",
+  "category": "Examples",
+  "skill": { "root": "skill" }
+}

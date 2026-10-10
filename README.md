@@ -1,61 +1,75 @@
 # CompanionPorts
 
-Recipes for KeepTalking actions — plugins, MCP servers, skills and ACP agents.
+Where KeepTalking finds actions to install: Companion plugins, MCP servers,
+skills and ACP agents.
 
-A port is a recipe, never the software itself. It says what an action is, where
-its upstream lives (pinned by hash) and what the installer has to bring.
-Upstream code stays where it is; this repo holds manifests and small files.
+## Branches
 
-## Layout
+- **`main`** is the scaffold: schemas, the index generator, CI. No content.
+- **`builtin`** is KeepTalking's own instance, the one the Companion reads by
+  default. It replaces the plugins that used to ship inside the Companion
+  runtime.
+
+An instance is any branch (or fork) that adds content on top of `main` and
+merges `main` again to pick up tooling changes. The two never edit the same
+paths, so those merges don't conflict:
+
+| Path | Owned by |
+|---|---|
+| `schema/`, `tools/`, `tests/`, `.github/`, this README | `main` |
+| `plugins/<slug>/`, `discovery/<slug>/`, `curation.json` | the instance |
+| `plugins/index.json`, `discovery/index.json` | CI — generated, never edited |
+
+## Layout of an instance
 
 ```
-INDEX.json                    # built from the manifests, one row per port
-schema/manifest.schema.json   # the manifest format
-ports/<kind>/<slug>/
-  manifest.json               # the port's single source of truth
-  …                           # skill files, patches; a plugin's entry if not fetched
-tools/build_index.py          # builds and checks INDEX.json
+discovery/
+  index.json              # every action the store shows, of any type
+  <slug>/action.json      # an MCP server, skill or ACP agent (+ its files)
+plugins/
+  index.json              # what to fetch to install each plugin
+  <slug>/manifest.json    # the plugin's declaration
+  <slug>/plugin.py        # the plugin, as in the Companion runtime
+curation.json             # featured actions and collections
 ```
 
-`<kind>` is one of `plugin`, `mcp`, `skill`, `acp` — the KeepTalking action
-payloads a port can produce. Built-in capabilities (primitives, filesystem,
-semantic retrieval, action creation) aren't ports.
+**Plugins.** A plugin folder is a Companion plugin as it is today, plus
+`manifest.json`. The manifest holds everything the plugin declares — name,
+look, requirements, permissions, meters, config and kinds — and the plugin
+loads it rather than repeating it in code, binding handlers to the kinds by
+name. So the store and the indexes never run plugin code.
 
-## How a client uses it
+**Discovery.** `discovery/index.json` lists every plugin and every
+`discovery/<slug>/` action, whatever its type. An action folder holds
+`action.json` and anything the action needs, such as a skill's files.
+Credentials are declared under `secrets` and referenced as `${secret:<key>}`;
+the installing node fills them in, and they never enter the repo.
 
-1. Fetch `INDEX.json`. It carries what the store shows before install: name,
-   summary, look, platforms, contributors, the secrets the port will ask for,
-   and the port directory's `sha256`.
-2. On install, fetch the port directory and check it against that hash.
-3. Fetch each `fetch` entry into the port's workdir, checking its `sha256`.
-4. Ask the user for the declared `secrets`; `${secret:<key>}` in the manifest
-   is replaced on the node, never written back here.
-5. Produce the action: a Companion plugin (venv from `requires`, then
-   `postInstall`, then `entry`), an MCP bundle, a skill bundle or an ACP bundle.
+**Curation.** Everything listed shows. `curation.json` only features
+actions and groups them into collections, by slug.
 
-Nothing in a port is executed to index it or show it. A plugin's `entry` is to
-load its own `manifest.json` and bind handlers by kind name, so the code can't
-declare a kind the manifest doesn't. (That's `Plugin.from_manifest`, not in the
-Python SDK yet; MarkItDown's fetched entry still declares itself.)
+## Indexes
 
-Plugin ports need the Companion and so install on macOS. Other platforms reach
-them as actions served by a peer.
+On every push to an instance branch, CI validates the content, runs
+`tools/generate.py` and commits the indexes if they changed. Each row carries
+the folder's `sha256`, which the installer checks after fetching it.
 
-## Adding a port
+Locally:
 
-1. Create `ports/<kind>/<slug>/manifest.json` (point `$schema` at
-   `../../../schema/manifest.schema.json` for editor completion).
-2. Pin every upstream file with `fetch` — `https` URLs at a fixed revision,
-   with their `sha256`.
-3. Declare every credential under `secrets`; never commit one.
-4. Run `tools/build_index.py` and commit `INDEX.json` with the port.
+```bash
+python3 tools/generate.py --validate
+```
 
-CI validates every manifest against the schema and fails if `INDEX.json` is
-stale.
+## Adding an action
+
+1. Add `plugins/<slug>/` or `discovery/<slug>/` on the instance branch. Point
+   `$schema` at `../../schema/plugin.schema.json` or
+   `../../schema/action.schema.json` for editor completion.
+2. Feature it in `curation.json` if you want it to stand out.
+3. Push. CI regenerates the indexes.
 
 ## Not yet
 
-- **Signing.** `INDEX.json` is unsigned; trust is the repo's HTTPS origin for
-  now. A repo key signing the index comes next, consensus attesters later.
-- **Terms and licences.** Ports are free. Terms will name a plugin's `meters`
-  and settle on the SDK's action-call path, not here.
+- **Signing.** Indexes are unsigned; trust is the repo's HTTPS origin.
+- **Terms and licences.** Everything is free. Terms will name a plugin's
+  `meters` and settle on the SDK's action-call path.

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../schema/action.schema.json",
+  "type": "mcp",
+  "name": "Hosted MCP",
+  "version": "1.0.0",
+  "summary": "A remote MCP server reached with the installer's own token",
+  "secrets": [{ "key": "token", "label": "Access token" }],
+  "mcp": { "http": { "url": "https://mcp.example.com/", "headers": { "Authorization": "Bearer ${secret:token}" } } }
+}

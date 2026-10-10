@@ -1,0 +1,19 @@
+{
+  "$schema": "../../../../schema/plugin.schema.json",
+  "name": "Echo",
+  "vendor": "example",
+  "version": "1.0.0",
+  "summary": "Says back what it's given",
+  "symbol": "arrow.uturn.left",
+  "category": "Examples",
+  "contributors": [{ "name": "Example", "role": "maintainer" }],
+  "config": [{ "key": "prefix", "label": "Prefix", "default": "" }],
+  "kinds": [
+    {
+      "name": "echo",
+      "displayName": "Echo",
+      "description": "Return the text unchanged",
+      "inputSchema": { "type": "object", "properties": { "text": { "type": "string" } } }
+    }
+  ]
+}

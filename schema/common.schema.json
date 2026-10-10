@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shared definitions",
+  "$defs": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+([-+].+)?$" },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "tint": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+    "contributors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "role"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "role": { "enum": ["maintainer", "upstream"] },
+          "url": { "type": "string", "format": "uri" }
+        }
+      }
+    }
+  }
+}
