@@ -1,5 +1,0 @@
-{
-  "$schema": "../../schema/curation.schema.json",
-  "featured": ["echo"],
-  "collections": [{ "title": "Getting started", "items": ["echo", "notes-skill"] }]
-}
