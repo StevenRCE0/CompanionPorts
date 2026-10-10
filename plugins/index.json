@@ -1,0 +1,27 @@
+{
+  "plugins": [
+    {
+      "slug": "markitdown",
+      "name": "MarkItDown",
+      "version": "0.1.0",
+      "entry": "plugin.py",
+      "kinds": [
+        "markitdown-convert"
+      ],
+      "path": "plugins/markitdown",
+      "sha256": "d3f829b65219e04474d0e97f055f1d2f5e76deaec932e18db4f3d50a76f3f749",
+      "files": [
+        {
+          "path": "manifest.json",
+          "sha256": "bb2d789df32dd1f7d5585d1c2d1042daeab27e1a0e577960798328ea7877bdb7",
+          "size": 2545
+        },
+        {
+          "path": "plugin.py",
+          "sha256": "f9339798ce2bec7708dbde7c70251ec0e7c32e3458a8dc46c59f51db38e1675f",
+          "size": 6621
+        }
+      ]
+    }
+  ]
+}

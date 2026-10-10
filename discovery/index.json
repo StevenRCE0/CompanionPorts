@@ -26,6 +26,31 @@
       ],
       "path": "discovery/github",
       "sha256": "3320da7d387267f7a9477d2aa0f513c2e883aed8f4ded2699869ab0338673bdc"
+    },
+    {
+      "slug": "markitdown",
+      "type": "plugin",
+      "name": "MarkItDown",
+      "version": "0.1.0",
+      "summary": "Turn documents into clean Markdown",
+      "vendor": "keeptalking",
+      "symbol": "doc.text",
+      "tint": "#F2762E",
+      "category": "Documents",
+      "homepage": "https://github.com/microsoft/markitdown",
+      "contributors": [
+        {
+          "name": "KeepTalking",
+          "role": "maintainer"
+        },
+        {
+          "name": "Microsoft",
+          "role": "upstream",
+          "url": "https://github.com/microsoft/markitdown"
+        }
+      ],
+      "path": "plugins/markitdown",
+      "sha256": "d3f829b65219e04474d0e97f055f1d2f5e76deaec932e18db4f3d50a76f3f749"
     }
   ],
   "curation": {
