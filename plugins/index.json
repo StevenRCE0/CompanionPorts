@@ -1,6 +1,52 @@
 {
   "plugins": [
     {
+      "slug": "browser-use",
+      "name": "BrowserUse",
+      "version": "0.1.0",
+      "entry": "plugin.py",
+      "kinds": [
+        "browser-task"
+      ],
+      "path": "plugins/browser-use",
+      "sha256": "5baad76e2f932fb4d01b0fa65d0f4f1b1fda7481d6736e2b152f7b35363ea49d",
+      "files": [
+        {
+          "path": "manifest.json",
+          "sha256": "43a3d36b6d207d83f2a5dad861e9a5529d6e1b713068a786ce2c2238c5a86f0b",
+          "size": 3221
+        },
+        {
+          "path": "plugin.py",
+          "sha256": "54133d2b8493e93c21a79f27ba4eb61fe8f220c4bba3492fdd5f48158c1884f4",
+          "size": 8071
+        }
+      ]
+    },
+    {
+      "slug": "computer-use",
+      "name": "ComputerUse",
+      "version": "0.1.0",
+      "entry": "plugin.py",
+      "kinds": [
+        "computer-use"
+      ],
+      "path": "plugins/computer-use",
+      "sha256": "7ccd2ea5fec29dffc544b2a7afbadfce6549f945105deada6528da5cfdecc9dd",
+      "files": [
+        {
+          "path": "manifest.json",
+          "sha256": "8def7eef7ea59f8af1df0644752886f45d7e3478cf2a204e044b88d3397f71fe",
+          "size": 32674
+        },
+        {
+          "path": "plugin.py",
+          "sha256": "c4b936dc6b19f4601752f2ef764ace9cf4a952cfc48cdfecc54e3ec3891a1cb4",
+          "size": 30989
+        }
+      ]
+    },
+    {
       "slug": "markitdown",
       "name": "MarkItDown",
       "version": "0.1.0",

@@ -1,6 +1,58 @@
 {
   "actions": [
     {
+      "slug": "browser-use",
+      "type": "plugin",
+      "name": "BrowserUse",
+      "version": "0.1.0",
+      "summary": "Hand a browsing task to an AI agent",
+      "description": "Describe what you need done on the web and a browser-use agent carries it out in Chrome on this Mac. Each action you add in KeepTalking can be limited to a list of domains, and every run comes back with a signed usage receipt.\n\nReal runs need an LLM provider and API key below; until then the plugin answers with a mock run that says what it would have done.",
+      "vendor": "browser-use.demo",
+      "symbol": "globe",
+      "tint": "#2F7CF6",
+      "category": "Web",
+      "homepage": "https://github.com/browser-use/browser-use",
+      "contributors": [
+        {
+          "name": "KeepTalking",
+          "role": "maintainer"
+        },
+        {
+          "name": "Browser Use",
+          "role": "upstream",
+          "url": "https://github.com/browser-use/browser-use"
+        }
+      ],
+      "path": "plugins/browser-use",
+      "sha256": "5baad76e2f932fb4d01b0fa65d0f4f1b1fda7481d6736e2b152f7b35363ea49d"
+    },
+    {
+      "slug": "computer-use",
+      "type": "plugin",
+      "name": "ComputerUse",
+      "version": "0.1.0",
+      "summary": "Operate Mac apps in the background",
+      "description": "Lets KeepTalking read and operate the apps on this Mac through their accessibility tree and window screenshots, powered by Cua Driver (open source, MIT). Clicks and typing go straight to the target app, so your own cursor and focus stay where they are; a separate agent cursor shows what it is doing.\n\nEach action instance names the apps it may use and whether it may act or only look. KeepTalking itself, password managers and Keychain Access are never reachable; terminals and System Settings only when an instance lists them.\n\nNeeds Accessibility and Screen Recording for KT Companion.",
+      "vendor": "keeptalking",
+      "symbol": "cursorarrow.motionlines",
+      "tint": "#3B82F6",
+      "category": "Automation",
+      "homepage": "https://github.com/trycua/cua",
+      "contributors": [
+        {
+          "name": "KeepTalking",
+          "role": "maintainer"
+        },
+        {
+          "name": "Cua",
+          "role": "upstream",
+          "url": "https://github.com/trycua/cua"
+        }
+      ],
+      "path": "plugins/computer-use",
+      "sha256": "7ccd2ea5fec29dffc544b2a7afbadfce6549f945105deada6528da5cfdecc9dd"
+    },
+    {
       "slug": "github",
       "type": "mcp",
       "name": "GitHub",
