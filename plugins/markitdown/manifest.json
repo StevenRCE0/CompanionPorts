@@ -1,0 +1,55 @@
+{
+  "$schema": "../../schema/plugin.schema.json",
+  "name": "MarkItDown",
+  "vendor": "keeptalking",
+  "version": "0.1.0",
+  "summary": "Turn documents into clean Markdown",
+  "description": "Converts PDFs, Office files, HTML, EPUB, images (with OCR) and audio (with transcription) into Markdown using Microsoft's MarkItDown. The document arrives from KeepTalking and the Markdown goes straight back as a new file.\n\nAn optional AI cleanup pass tidies headings, tables and lists with KeepTalking's own model, only when you allow AI for this plugin in KeepTalking.",
+  "symbol": "doc.text",
+  "tint": "#F2762E",
+  "category": "Documents",
+  "homepage": "https://github.com/microsoft/markitdown",
+  "contributors": [
+    { "name": "KeepTalking", "role": "maintainer" },
+    { "name": "Microsoft", "role": "upstream", "url": "https://github.com/microsoft/markitdown" }
+  ],
+  "requires": ["markitdown[all]"],
+  "meters": [
+    { "name": "convert.bytes", "unit": "byte", "description": "Bytes of source material converted" }
+  ],
+  "kinds": [
+    {
+      "name": "markitdown-convert",
+      "displayName": "Convert to Markdown",
+      "description": "Convert a document (PDF, Office, HTML, EPUB, images with OCR, audio with transcription…) into clean Markdown",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "polish": {
+            "type": "boolean",
+            "description": "Run an AI cleanup pass over the converted Markdown (needs the catalog's AI toggle in KeepTalking; silently skipped when unavailable)"
+          },
+          "instructions": {
+            "type": "string",
+            "description": "Optional guidance for conversion/cleanup emphasis"
+          }
+        }
+      },
+      "scopeSchema": {
+        "allowedExtensions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Source extensions this instance accepts; empty allows all supported formats"
+        },
+        "maxSourceBytes": { "type": "integer", "description": "Largest source file this instance accepts" },
+        "aiPolish": { "type": "boolean", "description": "Permit the AI cleanup pass on this instance" }
+      },
+      "defaultScope": { "allowedExtensions": [], "maxSourceBytes": 52428800, "aiPolish": true },
+      "objects": [
+        { "name": "source", "direction": "input", "description": "Document to convert" },
+        { "name": "markdown", "direction": "output", "description": "Converted Markdown document" }
+      ],
+      "capabilities": ["act"]
+    }
+  ]
+}
