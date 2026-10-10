@@ -1,0 +1,4 @@
+{
+  "$schema": "schema/curation.schema.json",
+  "featured": ["github"]
+}
