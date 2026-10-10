@@ -1,64 +1,63 @@
 # CompanionPorts
 
-Where KeepTalking finds actions to install: Companion plugins, MCP servers,
-skills and ACP agents.
+Plugins for the KeepTalking Companion.
 
 ## Branches
 
-- **`main`** is the scaffold: schemas, the index generator, CI. No content.
-- **`builtin`** is KeepTalking's own instance, the one the Companion reads by
-  default. It replaces the plugins that used to ship inside the Companion
-  runtime.
+- **`main`** is the scaffold: the manifest schema, the index generator, CI.
+  No plugins.
+- **`builtin`** is KeepTalking's own instance, the repository the Companion
+  reads by default. It replaces the plugins that used to ship inside the
+  Companion runtime.
 
-An instance is any branch (or fork) that adds content on top of `main` and
+An instance is any branch (or fork) that adds plugins on top of `main` and
 merges `main` again to pick up tooling changes. The two never edit the same
 paths, so those merges don't conflict:
 
 | Path | Owned by |
 |---|---|
 | `schema/`, `tools/`, `tests/`, `.github/`, this README | `main` |
-| `plugins/<slug>/`, `discovery/<slug>/`, `curation.json` | the instance |
-| `plugins/index.json`, `discovery/index.json` | CI — generated, never edited |
+| `plugins/<slug>/` | the instance |
+| `plugins/index.json` | CI — generated, never edited |
 
-## Layout of an instance
+## A plugin
 
 ```
-discovery/
-  index.json              # every action the store shows, of any type
-  <slug>/action.json      # an MCP server, skill or ACP agent (+ its files)
 plugins/
-  index.json              # what to fetch to install each plugin
+  index.json              # generated: every plugin, its listing and files
   <slug>/manifest.json    # the plugin's declaration
   <slug>/plugin.py        # the plugin, as in the Companion runtime
-curation.json             # featured actions and collections
 ```
 
-**Plugins.** A plugin folder is a Companion plugin as it is today, plus
-`manifest.json`. The manifest holds everything the plugin declares — name,
-look, requirements, permissions, meters, config and kinds — and the plugin
-loads it rather than repeating it in code, binding handlers to the kinds by
-name. So the store and the indexes never run plugin code.
+A plugin folder is a Companion plugin plus `manifest.json`. The manifest
+holds everything the plugin declares — name, look, requirements, permissions,
+meters, config and kinds — and the plugin loads it rather than repeating it in
+code, binding handlers to the kinds by name:
 
-**Discovery.** `discovery/index.json` lists every plugin and every
-`discovery/<slug>/` action, whatever its type. An action folder holds
-`action.json` and anything the action needs, such as a skill's files.
-Credentials are declared under `secrets` and referenced as `${secret:<key>}`;
-the installing node fills them in, and they never enter the repo.
+```python
+def make_plugin() -> Plugin:
+    plugin = Plugin.from_manifest(__file__)
 
-**Curation.** Everything listed shows. `curation.json` only features
-actions and groups them into collections, by slug.
+    @plugin.kind("markitdown-convert")
+    async def convert(args, ctx): ...
 
-## Indexes
+    return plugin
+```
 
-On every push to an instance branch, CI validates the content, runs
-`tools/generate.py` and commits the indexes if they changed.
+So the store and the index never run plugin code.
 
-Each row carries its folder's `sha256`: the sha256 of `<path>\0<file sha256>\n`
-for every file, in path order. `plugins/index.json` also lists the files, so a
-client installs a plugin by fetching each one from
-`<repository>/plugins/<slug>/<path>`, checking every file hash and then the
-folder hash. A repository URL is the base those paths hang off — for the
-built-in one, `https://raw.githubusercontent.com/StevenRCE0/CompanionPorts/builtin/`.
+## The index
+
+On every push to an instance branch, CI validates the plugins, runs
+`tools/generate.py` and commits `plugins/index.json` if it changed. Each row
+carries what the store shows (name, summary, look, contributors…), the files
+with their sha256 and size, and the folder's `sha256`: the sha256 of
+`<path>\0<file sha256>\n` for every file, in path order. A client installs a
+plugin by fetching each file from `<repository>/plugins/<slug>/<path>`,
+checking every file hash and then the folder hash.
+
+A repository URL is the base those paths hang off — for the built-in one,
+`https://raw.githubusercontent.com/StevenRCE0/CompanionPorts/builtin/`.
 
 Locally:
 
@@ -66,16 +65,18 @@ Locally:
 python3 tools/generate.py --validate
 ```
 
-## Adding an action
+## Adding a plugin
 
-1. Add `plugins/<slug>/` or `discovery/<slug>/` on the instance branch. Point
-   `$schema` at `../../schema/plugin.schema.json` or
-   `../../schema/action.schema.json` for editor completion.
-2. Feature it in `curation.json` if you want it to stand out.
-3. Push. CI regenerates the indexes.
+1. Add `plugins/<slug>/` on the instance branch. Point `$schema` at
+   `../../schema/plugin.schema.json` for editor completion.
+2. Push. CI regenerates the index.
 
-## Not yet
+## Not here
 
-- **Signing.** Indexes are unsigned; trust is the repo's HTTPS origin.
+- **Discovery.** Featuring, curating and searching across MCP servers,
+  skills and other actions needs state — what people install, rate and report
+  — so it belongs to a server, not to static files. This repository only
+  lists plugins.
+- **Signing.** The index is unsigned; trust is the repository's HTTPS origin.
 - **Terms and licences.** Everything is free. Terms will name a plugin's
   `meters` and settle on the SDK's action-call path.

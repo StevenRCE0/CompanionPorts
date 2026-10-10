@@ -1,7 +1,7 @@
 name: Ports
 
 # main is the scaffold: it tests the tooling. Every other branch is an
-# instance: its content is validated, and on push its indexes are regenerated
+# instance: its plugins are validated, and on push its index is regenerated
 # and committed. Instances merge main to pick up tooling changes.
 
 on:
@@ -18,16 +18,14 @@ jobs:
           python-version: "3.12"
       - name: Test the generator
         run: python3 -m unittest discover -s tests
-      - name: Validate against the schemas
+      - name: Validate against the schema
         run: |
           shopt -s nullglob
           pip install --quiet check-jsonschema==0.29.4
           validate() { if [ $# -gt 1 ]; then check-jsonschema --schemafile "$@"; fi; }
           validate schema/plugin.schema.json plugins/*/manifest.json tests/fixtures/plugins/*/manifest.json
-          validate schema/action.schema.json discovery/*/action.json tests/fixtures/discovery/*/action.json
-          validate schema/curation.schema.json [c]uration.json tests/fixtures/curation.json  # bracket: drop when absent
       - name: Validate content
-        # Indexes may be stale before a push; they're regenerated after it.
+        # The index may be stale before a push; it's regenerated after it.
         run: python3 tools/generate.py --validate
 
   index:
@@ -41,13 +39,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Regenerate indexes
+      - name: Regenerate the index
         run: python3 tools/generate.py
       - name: Commit if changed
         run: |
-          git add -A discovery/index.json plugins/index.json 2>/dev/null || git add -A discovery/index.json
+          git add plugins/index.json
           if git diff --cached --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Regenerate indexes"
+          git commit -m "Regenerate the plugin index"
           git push
