@@ -1,0 +1,58 @@
+{
+  "ports": [
+    {
+      "id": "plugin/markitdown",
+      "kind": "plugin",
+      "name": "MarkItDown",
+      "version": "0.1.0",
+      "summary": "Turn documents into clean Markdown",
+      "vendor": "keeptalking",
+      "category": "Documents",
+      "symbol": "doc.text",
+      "tint": "#F2762E",
+      "platforms": [
+        "macos"
+      ],
+      "contributors": [
+        {
+          "name": "KeepTalking",
+          "role": "maintainer",
+          "url": "https://github.com/StevenRCE0/CompanionRuntime"
+        },
+        {
+          "name": "Microsoft",
+          "role": "upstream",
+          "url": "https://github.com/microsoft/markitdown"
+        }
+      ],
+      "path": "ports/plugin/markitdown",
+      "sha256": "ca1ddaec57aaf605ee485fd4ccdb24a1586ba218dba10bc33e5c1245236dc910"
+    },
+    {
+      "id": "mcp/github",
+      "kind": "mcp",
+      "name": "GitHub",
+      "version": "1.0.0",
+      "summary": "Issues, pull requests and code on GitHub, with your own access",
+      "vendor": "github",
+      "category": "Developer",
+      "symbol": "chevron.left.forwardslash.chevron.right",
+      "contributors": [
+        {
+          "name": "KeepTalking",
+          "role": "maintainer"
+        },
+        {
+          "name": "GitHub",
+          "role": "upstream",
+          "url": "https://github.com/github/github-mcp-server"
+        }
+      ],
+      "secrets": [
+        "Personal access token"
+      ],
+      "path": "ports/mcp/github",
+      "sha256": "e6bcc94b6ca29f83854ac980efd33191d204f0dd9341365ed113a426c80f3355"
+    }
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/StevenRCE0/CompanionPorts/schema/manifest.schema.json",
+  "title": "Port manifest",
+  "description": "One port: a recipe for a KeepTalking action, never the software itself. The manifest is the single source of truth — indexing and the store read it without executing anything.",
+  "type": "object",
+  "required": ["kind", "name", "version", "summary", "contributors"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "kind": { "enum": ["plugin", "mcp", "skill", "acp"] },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+([-+].+)?$" },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "description": { "type": "string" },
+    "vendor": { "type": "string" },
+    "homepage": { "type": "string", "format": "uri" },
+    "category": { "type": "string" },
+    "symbol": { "type": "string", "description": "SF Symbol name." },
+    "tint": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+    "platforms": {
+      "type": "array",
+      "items": { "enum": ["macos", "ios", "visionos"] },
+      "uniqueItems": true,
+      "description": "Where the port can be installed. Absent means everywhere its kind allows; plugin ports need the Companion, so macOS only."
+    },
+    "contributors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/contributor" }
+    },
+    "fetch": {
+      "type": "array",
+      "description": "Upstream files pulled into the port's workdir at install, each checked against its hash.",
+      "items": { "$ref": "#/$defs/fetch" }
+    },
+    "secrets": {
+      "type": "array",
+      "description": "Credentials the installer supplies. Declared here, never stored in the repo.",
+      "items": { "$ref": "#/$defs/secret" }
+    },
+    "plugin": { "$ref": "#/$defs/plugin" },
+    "mcp": { "$ref": "#/$defs/mcp" },
+    "skill": { "$ref": "#/$defs/skill" },
+    "acp": { "$ref": "#/$defs/acp" }
+  },
+  "allOf": [
+    { "if": { "properties": { "kind": { "const": "plugin" } } }, "then": { "required": ["plugin"] } },
+    { "if": { "properties": { "kind": { "const": "mcp" } } }, "then": { "required": ["mcp"] } },
+    { "if": { "properties": { "kind": { "const": "skill" } } }, "then": { "required": ["skill"] } },
+    { "if": { "properties": { "kind": { "const": "acp" } } }, "then": { "required": ["acp"] } }
+  ],
+  "$defs": {
+    "contributor": {
+      "type": "object",
+      "required": ["name", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "enum": ["maintainer", "upstream"] },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "fetch": {
+      "type": "object",
+      "required": ["url", "sha256", "into"],
+      "additionalProperties": false,
+      "properties": {
+        "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "into": { "type": "string", "pattern": "^[^/][^\\\\]*$", "description": "Path relative to the port workdir." }
+      }
+    },
+    "secret": {
+      "type": "object",
+      "required": ["key", "label", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Referenced elsewhere as ${secret:<key>}." },
+        "label": { "type": "string" },
+        "type": { "enum": ["token", "oauth"] },
+        "help": { "type": "string" },
+        "url": { "type": "string", "format": "uri", "description": "Where the user gets the credential." }
+      }
+    },
+    "plugin": {
+      "type": "object",
+      "required": ["entry", "kinds"],
+      "additionalProperties": false,
+      "properties": {
+        "entry": { "type": "string", "description": "The script that loads this manifest and binds handlers by kind name." },
+        "requires": { "type": "array", "items": { "type": "string" }, "description": "pip requirement specifiers for the port's venv." },
+        "postInstall": { "type": "array", "items": { "type": "string" }, "description": "argv passed to the venv python after requirements install." },
+        "meters": { "type": "array", "items": { "$ref": "#/$defs/meter" } },
+        "kinds": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/pluginKind" } }
+      }
+    },
+    "meter": {
+      "type": "object",
+      "required": ["name", "unit"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "unit": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "pluginKind": {
+      "type": "object",
+      "required": ["name", "displayName", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "inputSchema": { "type": "object" },
+        "scopeSchema": { "type": "object" },
+        "defaultScope": { "type": "object" },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "direction"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "direction": { "enum": ["input", "output"] },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "capabilities": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "mcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [{ "required": ["stdio"] }, { "required": ["http"] }],
+      "properties": {
+        "stdio": {
+          "type": "object",
+          "required": ["arguments"],
+          "additionalProperties": false,
+          "properties": {
+            "arguments": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            "environment": { "type": "object", "additionalProperties": { "type": "string" } }
+          }
+        },
+        "http": {
+          "type": "object",
+          "required": ["url"],
+          "additionalProperties": false,
+          "properties": {
+            "url": { "type": "string", "format": "uri" },
+            "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+            "scope": { "type": "string" }
+          }
+        }
+      }
+    },
+    "skill": {
+      "type": "object",
+      "required": ["root"],
+      "additionalProperties": false,
+      "properties": {
+        "root": { "type": "string", "description": "Directory in the port holding SKILL.md." },
+        "requiredNetworkHosts": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "acp": {
+      "type": "object",
+      "required": ["command"],
+      "additionalProperties": false,
+      "properties": {
+        "command": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "environment": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    }
+  }
+}
