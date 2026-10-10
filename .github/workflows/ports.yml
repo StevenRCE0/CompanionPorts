@@ -25,7 +25,7 @@ jobs:
           validate() { if [ $# -gt 1 ]; then check-jsonschema --schemafile "$@"; fi; }
           validate schema/plugin.schema.json plugins/*/manifest.json tests/fixtures/plugins/*/manifest.json
           validate schema/action.schema.json discovery/*/action.json tests/fixtures/discovery/*/action.json
-          validate schema/curation.schema.json curation.json tests/fixtures/curation.json
+          validate schema/curation.schema.json [c]uration.json tests/fixtures/curation.json  # bracket: drop when absent
       - name: Validate content
         # Indexes may be stale before a push; they're regenerated after it.
         run: python3 tools/generate.py --validate
