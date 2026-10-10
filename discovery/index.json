@@ -1,0 +1,36 @@
+{
+  "actions": [
+    {
+      "slug": "github",
+      "type": "mcp",
+      "name": "GitHub",
+      "version": "1.0.0",
+      "summary": "Issues, pull requests and code on GitHub, with your own access",
+      "vendor": "github",
+      "symbol": "chevron.left.forwardslash.chevron.right",
+      "category": "Developer",
+      "homepage": "https://github.com/github/github-mcp-server",
+      "contributors": [
+        {
+          "name": "KeepTalking",
+          "role": "maintainer"
+        },
+        {
+          "name": "GitHub",
+          "role": "upstream",
+          "url": "https://github.com/github/github-mcp-server"
+        }
+      ],
+      "secrets": [
+        "Personal access token"
+      ],
+      "path": "discovery/github",
+      "sha256": "3320da7d387267f7a9477d2aa0f513c2e883aed8f4ded2699869ab0338673bdc"
+    }
+  ],
+  "curation": {
+    "featured": [
+      "github"
+    ]
+  }
+}
