@@ -39,18 +39,29 @@ class Invalid(Exception):
     pass
 
 
-def folder_hash(folder: Path) -> str:
-    """sha256 over the sorted (path, file sha256) pairs of a folder."""
-    digest = hashlib.sha256()
+def folder_files(folder: Path) -> list[dict]:
+    """Each file in a folder, sorted by path, with its sha256 and size —
+    what a client fetches one by one over plain HTTP."""
     files = sorted(
         path for path in folder.rglob("*")
         if path.is_file() and not IGNORED & set(path.relative_to(folder).parts)
     )
-    for path in files:
-        digest.update(path.relative_to(folder).as_posix().encode())
-        digest.update(b"\0")
-        digest.update(hashlib.sha256(path.read_bytes()).hexdigest().encode())
-        digest.update(b"\n")
+    return [
+        {
+            "path": path.relative_to(folder).as_posix(),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "size": path.stat().st_size,
+        }
+        for path in files
+    ]
+
+
+def folder_hash(files: list[dict]) -> str:
+    """sha256 over "<path>\\0<file sha256>\\n" for each file, in path order.
+    Clients recompute it over what they fetched."""
+    digest = hashlib.sha256()
+    for file in files:
+        digest.update(f"{file['path']}\0{file['sha256']}\n".encode())
     return digest.hexdigest()
 
 
@@ -89,7 +100,8 @@ def plugin_rows(root: Path) -> tuple[list[dict], list[dict], list[str]]:
         kinds = [kind.get("name") for kind in manifest.get("kinds", [])]
         if len(kinds) != len(set(kinds)):
             problems.append(f"plugins/{slug}: kind names repeat")
-        sha = folder_hash(folder)
+        files = folder_files(folder)
+        sha = folder_hash(files)
         path = f"plugins/{slug}"
         listing = {"slug": slug, "type": "plugin"}
         listing.update({k: manifest[k] for k in LISTING_FIELDS if k in manifest})
@@ -103,6 +115,7 @@ def plugin_rows(root: Path) -> tuple[list[dict], list[dict], list[str]]:
             "kinds": kinds,
             "path": path,
             "sha256": sha,
+            "files": files,
         })
     return listings, installs, problems
 
@@ -124,7 +137,7 @@ def action_rows(root: Path) -> tuple[list[dict], list[str]]:
         row.update({k: action[k] for k in LISTING_FIELDS if k in action})
         if action.get("secrets"):
             row["secrets"] = [secret.get("label") for secret in action["secrets"]]
-        row.update({"path": f"discovery/{slug}", "sha256": folder_hash(folder)})
+        row.update({"path": f"discovery/{slug}", "sha256": folder_hash(folder_files(folder))})
         rows.append(row)
     return rows, problems
 
