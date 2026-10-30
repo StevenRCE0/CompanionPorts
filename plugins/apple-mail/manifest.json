@@ -1,0 +1,428 @@
+{
+ "$schema": "../../schema/plugin.schema.json",
+ "name": "Apple Mail",
+ "vendor": "keeptalking",
+ "version": "0.1.0",
+ "summary": "Read your mail in Apple Mail",
+ "description": "Gives KeepTalking read access to the mail in Apple Mail on this Mac: list accounts and mailboxes, list and search messages, read a message and hand its attachments over as KeepTalking files. Powered by apple-mail-mcp by Patrick Freyer (open source, MIT), which talks to Mail through AppleScript.\n\nRead only: nothing here sends, moves, flags or deletes mail. The first call asks macOS to let KT Companion control Mail (Privacy & Security → Automation); no Full Disk Access is needed. Each action instance can be limited to some of your Mail accounts.",
+ "symbol": "envelope",
+ "tint": "#1E88F5",
+ "category": "Communication",
+ "homepage": "https://github.com/patrickfreyer/apple-mail-mcp",
+ "contributors": [
+  {
+   "name": "KeepTalking",
+   "role": "maintainer"
+  },
+  {
+   "name": "Patrick Freyer",
+   "role": "upstream",
+   "url": "https://github.com/patrickfreyer/apple-mail-mcp"
+  }
+ ],
+ "requires": [
+  "mcp-apple-mail==3.2.1",
+  "fastmcp==4.1.4"
+ ],
+ "meters": [
+  {
+   "name": "mail.reads",
+   "unit": "call",
+   "description": "Lists, searches and reads"
+  },
+  {
+   "name": "mail.attachment.bytes",
+   "unit": "byte",
+   "description": "Attachment bytes handed out"
+  }
+ ],
+ "kinds": [
+  {
+   "name": "apple-mail",
+   "displayName": "Apple Mail",
+   "description": "Read the user's mail in Apple Mail on this Mac. Start with list_accounts, then list_inbox_emails for the newest messages or search_emails to find some; both return JSON rows whose internet_message_id (with the row's account and mailbox) addresses read_email. read_email returns headers, the plain-text body and numbered attachments; get_email_attachment writes one of them into the call's `attachment` output. Read only: nothing here sends, moves, flags or deletes mail. Accounts outside this instance's scope are refused.",
+   "inputSchema": {
+    "type": "object",
+    "title": "apple-mail",
+    "properties": {
+     "tool": {
+      "type": "string",
+      "enum": [
+       "list_accounts",
+       "list_mailboxes",
+       "get_mailbox_unread_counts",
+       "list_inbox_emails",
+       "search_emails",
+       "get_email_thread",
+       "read_email",
+       "get_email_attachment"
+      ],
+      "description": "Which operation: list_accounts — Mail accounts this instance may read; list_mailboxes — Mailboxes (folders) of an account, with message counts; get_mailbox_unread_counts — Unread counts per mailbox, or per-account inbox totals with summary_only; list_inbox_emails — Newest inbox messages first, as JSON rows carrying internet_message_id for read_email; search_emails — Search one account's mailbox by subject, sender, body text, dates, flags, read status or attachments; JSON rows carry internet_message_id; get_email_thread — Messages of a conversation, matched by subject; read_email — Read one message: headers, the plain-text body and its numbered attachments (name, type, size); get_email_attachment — Write one attachment of a message into the call's `attachment` output"
+     },
+     "account": {
+      "type": "string",
+      "description": "Mail account name from list_accounts; omit for every account this instance may read"
+     },
+     "attachment": {
+      "type": "string",
+      "description": "The attachment's number from read_email, or its file name"
+     },
+     "body_text": {
+      "type": "string",
+      "description": "Body contains (slow on big mailboxes)"
+     },
+     "date_from": {
+      "type": "string",
+      "description": "Received on or after, YYYY-MM-DD"
+     },
+     "date_to": {
+      "type": "string",
+      "description": "Received on or before, YYYY-MM-DD"
+     },
+     "flagged": {
+      "type": "boolean",
+      "description": "Only flagged (true) or unflagged (false) messages"
+     },
+     "has_attachments": {
+      "type": "boolean",
+      "description": "Only messages with (true) or without (false) attachments"
+     },
+     "include_content": {
+      "type": "boolean",
+      "description": "Add a short content preview (slower)"
+     },
+     "include_counts": {
+      "type": "boolean",
+      "description": "Include message counts (default true)"
+     },
+     "include_read": {
+      "type": "boolean",
+      "description": "Include read messages (default true)"
+     },
+     "include_zero": {
+      "type": "boolean",
+      "description": "Include mailboxes with no unread messages"
+     },
+     "limit": {
+      "type": "integer",
+      "description": "Rows per page (default 20)"
+     },
+     "mailbox": {
+      "type": "string",
+      "description": "Mailbox name (default INBOX); \"All\" searches every mailbox"
+     },
+     "max_chars": {
+      "type": "integer",
+      "description": "Body length cap in characters (default 20000)"
+     },
+     "max_content_length": {
+      "type": "integer",
+      "description": "Preview length in characters"
+     },
+     "max_emails": {
+      "type": "integer",
+      "description": "Messages per account (default 20)"
+     },
+     "max_messages": {
+      "type": "integer",
+      "description": "Most messages to return (default 50)"
+     },
+     "message_id": {
+      "type": "string",
+      "description": "The message's internet_message_id from list_inbox_emails or search_emails (its Message-ID header, not the numeric message_id)"
+     },
+     "offset": {
+      "type": "integer",
+      "description": "Rows to skip, for paging"
+     },
+     "read_status": {
+      "type": "string",
+      "description": "all (default), read or unread"
+     },
+     "sender": {
+      "type": "string",
+      "description": "Sender contains"
+     },
+     "sort": {
+      "type": "string",
+      "description": "date_desc (default) or date_asc"
+     },
+     "subject_keyword": {
+      "type": "string",
+      "description": "Subject contains"
+     },
+     "summary_only": {
+      "type": "boolean",
+      "description": "Only per-account inbox unread totals"
+     }
+    },
+    "required": [
+     "tool"
+    ]
+   },
+   "scopeSchema": {
+    "accounts": {
+     "title": "Accounts",
+     "type": "array",
+     "items": {
+      "type": "string"
+     },
+     "description": "Mail accounts this instance may read; empty allows every account in Mail"
+    }
+   },
+   "defaultScope": {
+    "accounts": []
+   },
+   "objects": [
+    {
+     "name": "attachment",
+     "direction": "output",
+     "description": "File written by get_email_attachment"
+    }
+   ],
+   "subTools": [
+    {
+     "name": "list_accounts",
+     "description": "Mail accounts this instance may read",
+     "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "list_mailboxes",
+     "description": "Mailboxes (folders) of an account, with message counts",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "account": {
+        "type": "string",
+        "description": "Mail account name from list_accounts; omit for every account this instance may read"
+       },
+       "include_counts": {
+        "type": "boolean",
+        "description": "Include message counts (default true)"
+       }
+      },
+      "required": [],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "get_mailbox_unread_counts",
+     "description": "Unread counts per mailbox, or per-account inbox totals with summary_only",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "account": {
+        "type": "string",
+        "description": "Mail account name from list_accounts; omit for every account this instance may read"
+       },
+       "include_zero": {
+        "type": "boolean",
+        "description": "Include mailboxes with no unread messages"
+       },
+       "summary_only": {
+        "type": "boolean",
+        "description": "Only per-account inbox unread totals"
+       }
+      },
+      "required": [],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "list_inbox_emails",
+     "description": "Newest inbox messages first, as JSON rows carrying internet_message_id for read_email",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "account": {
+        "type": "string",
+        "description": "Mail account name from list_accounts; omit for every account this instance may read"
+       },
+       "max_emails": {
+        "type": "integer",
+        "description": "Messages per account (default 20)"
+       },
+       "include_read": {
+        "type": "boolean",
+        "description": "Include read messages (default true)"
+       },
+       "include_content": {
+        "type": "boolean",
+        "description": "Add a short content preview (slower)"
+       }
+      },
+      "required": [],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "search_emails",
+     "description": "Search one account's mailbox by subject, sender, body text, dates, flags, read status or attachments; JSON rows carry internet_message_id",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "account": {
+        "type": "string",
+        "description": "Mail account name from list_accounts; omit for every account this instance may read"
+       },
+       "mailbox": {
+        "type": "string",
+        "description": "Mailbox name (default INBOX); \"All\" searches every mailbox"
+       },
+       "subject_keyword": {
+        "type": "string",
+        "description": "Subject contains"
+       },
+       "sender": {
+        "type": "string",
+        "description": "Sender contains"
+       },
+       "body_text": {
+        "type": "string",
+        "description": "Body contains (slow on big mailboxes)"
+       },
+       "has_attachments": {
+        "type": "boolean",
+        "description": "Only messages with (true) or without (false) attachments"
+       },
+       "flagged": {
+        "type": "boolean",
+        "description": "Only flagged (true) or unflagged (false) messages"
+       },
+       "read_status": {
+        "type": "string",
+        "description": "all (default), read or unread"
+       },
+       "date_from": {
+        "type": "string",
+        "description": "Received on or after, YYYY-MM-DD"
+       },
+       "date_to": {
+        "type": "string",
+        "description": "Received on or before, YYYY-MM-DD"
+       },
+       "include_content": {
+        "type": "boolean",
+        "description": "Add a content preview per row"
+       },
+       "max_content_length": {
+        "type": "integer",
+        "description": "Preview length in characters"
+       },
+       "limit": {
+        "type": "integer",
+        "description": "Rows per page (default 20)"
+       },
+       "offset": {
+        "type": "integer",
+        "description": "Rows to skip, for paging"
+       },
+       "sort": {
+        "type": "string",
+        "description": "date_desc (default) or date_asc"
+       }
+      },
+      "required": [],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "get_email_thread",
+     "description": "Messages of a conversation, matched by subject",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "account": {
+        "type": "string",
+        "description": "Mail account name from list_accounts"
+       },
+       "subject_keyword": {
+        "type": "string",
+        "description": "Subject of the conversation (Re:/Fwd: prefixes are ignored)"
+       },
+       "mailbox": {
+        "type": "string",
+        "description": "Mailbox name (default INBOX); \"All\" looks everywhere"
+       },
+       "max_messages": {
+        "type": "integer",
+        "description": "Most messages to return (default 50)"
+       }
+      },
+      "required": [
+       "account",
+       "subject_keyword"
+      ],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "read_email",
+     "description": "Read one message: headers, the plain-text body and its numbered attachments (name, type, size)",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "account": {
+        "type": "string",
+        "description": "Mail account name from list_accounts"
+       },
+       "mailbox": {
+        "type": "string",
+        "description": "Mailbox name (default INBOX; localised and Exchange inboxes resolve too)"
+       },
+       "message_id": {
+        "type": "string",
+        "description": "The message's internet_message_id from list_inbox_emails or search_emails (its Message-ID header, not the numeric message_id)"
+       },
+       "max_chars": {
+        "type": "integer",
+        "description": "Body length cap in characters (default 20000)"
+       }
+      },
+      "required": [
+       "account",
+       "message_id"
+      ],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "get_email_attachment",
+     "description": "Write one attachment of a message into the call's `attachment` output",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "account": {
+        "type": "string",
+        "description": "Mail account name from list_accounts"
+       },
+       "mailbox": {
+        "type": "string",
+        "description": "Mailbox name (default INBOX; localised and Exchange inboxes resolve too)"
+       },
+       "message_id": {
+        "type": "string",
+        "description": "The message's internet_message_id from list_inbox_emails or search_emails (its Message-ID header, not the numeric message_id)"
+       },
+       "attachment": {
+        "type": "string",
+        "description": "The attachment's number from read_email, or its file name"
+       }
+      },
+      "required": [
+       "account",
+       "message_id",
+       "attachment"
+      ],
+      "additionalProperties": false
+     }
+    }
+   ]
+  }
+ ]
+}
