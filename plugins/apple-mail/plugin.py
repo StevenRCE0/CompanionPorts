@@ -125,7 +125,6 @@ class Server:
     def __init__(self, state_dir: Path):
         self.state_dir = state_dir
         self.log = state_dir / "server.log"
-        self.files = state_dir / "server-files"
         self.client: McpStdioClient | None = None
         self._lock = asyncio.Lock()
 
@@ -142,11 +141,9 @@ class Server:
             if self.client is not None:
                 await self.client.close()
                 self.client = None
-            self.files.mkdir(parents=True, exist_ok=True)
             self.log.write_bytes(b"")
             client = McpStdioClient(
-                [sys.executable, "-I", "-m", "apple_mail_mcp", "--read-only",
-                 "--write-dir", str(self.files), "--attach-dir", str(self.files)],
+                [sys.executable, "-I", "-m", "apple_mail_mcp", "--read-only"],
                 env=self._env(), stderr_path=self.log, client_name="keeptalking-apple-mail",
             )
             try:
