@@ -1,0 +1,567 @@
+{
+ "$schema": "../../schema/plugin.schema.json",
+ "name": "Blender",
+ "vendor": "keeptalking",
+ "version": "0.1.0",
+ "summary": "Model, look at and script your open Blender",
+ "description": "Lets KeepTalking work in the Blender open on this Mac: read the scene, look at it, run scripts, pull assets from Poly Haven, Sketchfab and Poly Pizza, and generate models. Powered by MCP for Blender by Siddharth Ahuja (open source, MIT); not made by the Blender Foundation.\n\nWhen Blender can't be reached, the plugin installs its addon into your newest Blender and enables it, provided Blender is closed. After that, opening Blender is enough. Upstream's telemetry is switched off. Asset libraries and generators also have to be ticked in the MCP for Blender sidebar in Blender.\n\nEach action instance chooses how scripts run. Sandboxed, the default, blocks system and network access, though Blender can still save, render and export files. Full scripts can do anything your account can. Generating models is off by default because it can cost money, and uses the API keys or subscription set in the addon's preferences.",
+ "symbol": "cube.transparent",
+ "tint": "#EA7600",
+ "category": "Creative",
+ "homepage": "https://github.com/ahujasid/mcp-for-blender",
+ "contributors": [
+  {
+   "name": "KeepTalking",
+   "role": "maintainer"
+  },
+  {
+   "name": "Siddharth Ahuja",
+   "role": "upstream",
+   "url": "https://github.com/ahujasid/mcp-for-blender"
+  }
+ ],
+ "requires": [
+  "mcp-for-blender==2.2.6",
+  "mcp==1.30.0"
+ ],
+ "meters": [
+  {
+   "name": "blender.calls",
+   "unit": "call",
+   "description": "Calls that reached Blender"
+  },
+  {
+   "name": "blender.generations",
+   "unit": "call",
+   "description": "3D models requested from a generator"
+  }
+ ],
+ "kinds": [
+  {
+   "name": "blender",
+   "displayName": "Blender",
+   "description": "Work in the user's live Blender on this Mac. Start with get_addon_status, then get_scene_info; use look to see the result of every change. execute_blender_code does the modelling. Scripts run in someone else's Blender: look shader nodes up by type, never by name (names are localized), and read enum identifiers rather than hardcoding them. Material colors go on shader node inputs. Imported and generated models arrive at arbitrary scale: size them from the reported bounding box. To save a render as a file, render it and call look with image \"Render Result\".",
+   "inputSchema": {
+    "type": "object",
+    "title": "blender",
+    "properties": {
+     "tool": {
+      "type": "string",
+      "enum": [
+       "get_addon_status",
+       "get_scene_info",
+       "look",
+       "execute_blender_code",
+       "search_assets",
+       "import_asset",
+       "generate_3d"
+      ],
+      "description": "Which operation: get_addon_status — Blender's version, whether its addon matches this plugin, and which asset libraries and generators are switched on. Call it once at the start; get_scene_info — Facts about the scene as text: one header line, then one line per object with the fields you ask for. No image; to see the scene, use look; look — See the scene as one image. For counts, sizes and positions, use get_scene_info; execute_blender_code — Run Python in the user's live Blender (bpy, bmesh, mathutils); whatever it prints comes back. Work in small steps. Unless this instance allows full scripts, imports are limited to bpy, bmesh, mathutils and pure-Python stdlib, with no open/eval/exec, no os/subprocess/network and no handlers or timers; search_assets — Search a library of existing assets: polyhaven (HDRIs, PBR textures, models, all CC0), sketchfab (user-made models, licences vary) or polypizza (low-poly models); import_asset — Download an asset found with search_assets and bring it into the scene. Afterwards check the reported bounding box, put the object on the ground, and look at it; generate_3d — Make one new textured 3D model from a text prompt, or from a picture passed as the call's `image` input, and import it. One object per call, not a whole scene. Each call can cost the user money or a monthly generation. Usually takes 1-3 minutes: if it isn't done in time you get a job handle to pass back"
+     },
+     "animated": {
+      "type": "boolean",
+      "description": "Only animated models"
+     },
+     "apply_to": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "polyhaven textures: object names to put the material on"
+     },
+     "asset_type": {
+      "type": "string",
+      "description": "polyhaven: hdris, textures, models or all (default)"
+     },
+     "attributes": {
+      "type": "object",
+      "description": "Source-specific filters"
+     },
+     "bbox_condition": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      },
+      "description": "hyper3d only: [length, width, height] proportions"
+     },
+     "category": {
+      "type": "string",
+      "description": "Category filter"
+     },
+     "code": {
+      "type": "string",
+      "description": "The Python to run"
+     },
+     "distance": {
+      "type": "number",
+      "description": "Metres from the target's centre to the eye, for angles and frames views"
+     },
+     "fields": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Per object, default location, size, children, hidden. placement: location, size, ground, rotation, scale, parent. contents: children, hidden, details, materials, modifiers, animation. health: topology, weights. settings adds a line with the file, engine, frame range, resolution, camera, HDRI and unit scale"
+     },
+     "file_format": {
+      "type": "string",
+      "description": "polyhaven: hdr/exr for HDRIs, jpg/png/exr for textures"
+     },
+     "frame_count": {
+      "type": "integer",
+      "description": "For frames: how many to sample, 2-12"
+     },
+     "frames": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      },
+      "description": "For frames: explicit frame numbers"
+     },
+     "id": {
+      "type": "string",
+      "description": "The asset's id (UID for sketchfab) from search_assets"
+     },
+     "image": {
+      "type": "string",
+      "description": "Instead of the scene, show an image inside the Blender file, such as \"Render Result\" after a render. Leave mode unset. Paths are refused"
+     },
+     "job": {
+      "type": "string",
+      "description": "A handle from an earlier call, to keep waiting for it"
+     },
+     "licence": {
+      "type": "string",
+      "description": "Licence filter"
+     },
+     "limit": {
+      "type": "integer",
+      "description": "Most object lines (default 20)"
+     },
+     "max_size": {
+      "type": "integer",
+      "description": "Longest side in pixels (default 768)"
+     },
+     "min_size_m": {
+      "type": "number",
+      "description": "Smallest model size in metres"
+     },
+     "mode": {
+      "type": "string",
+      "description": "viewport (what the user sees; default), camera, angles (the target from several sides, auto-framed) or frames (a strip over the animation)"
+     },
+     "name": {
+      "type": "string",
+      "description": "Object name in the scene"
+     },
+     "pose_mode": {
+      "type": "string",
+      "description": "meshy only: a-pose or t-pose"
+     },
+     "previews": {
+      "type": "integer",
+      "description": "How many results to include preview images for (default 0)"
+     },
+     "prompt": {
+      "type": "string",
+      "description": "Short English description of one object"
+     },
+     "provider": {
+      "type": "string",
+      "description": "auto (default), tripo, hunyuan3d, hyper3d or meshy"
+     },
+     "quality": {
+      "type": "string",
+      "description": "standard or high; omit for the user's default"
+     },
+     "query": {
+      "type": "string",
+      "description": "Name filter across all objects"
+     },
+     "resolution": {
+      "type": "string",
+      "description": "polyhaven: 1k (default), 2k, 4k or 8k"
+     },
+     "root": {
+      "type": "string",
+      "description": "Object whose hierarchy to list"
+     },
+     "shading": {
+      "type": "string",
+      "description": "solid, material, rendered (EEVEE and Workbench only), wireframe or xray. Default: the viewport's"
+     },
+     "source": {
+      "type": "string",
+      "description": "polyhaven, sketchfab or polypizza"
+     },
+     "target": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Object names to frame, children included. Default: every visible object"
+     },
+     "target_size": {
+      "type": "number",
+      "description": "Size in metres of the model's largest dimension. Required for sketchfab, recommended for polypizza"
+     },
+     "view": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "array",
+        "items": {
+         "type": "number"
+        }
+       }
+      ],
+      "description": "For frames: \"camera\", an angle name or an [x, y, z] direction"
+     },
+     "views": {
+      "type": "array",
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "array",
+         "items": {
+          "type": "number"
+         }
+        }
+       ]
+      },
+      "description": "For angles: up to 6 of front, back, left, right, top, three_quarter, or [x, y, z] directions from the target towards the eye"
+     },
+     "wait_seconds": {
+      "type": "integer",
+      "description": "Seconds to wait before handing back a job, at most 45"
+     }
+    },
+    "required": [
+     "tool"
+    ]
+   },
+   "scopeSchema": {
+    "code": {
+     "title": "Scripts",
+     "type": "string",
+     "enum": [
+      "sandboxed",
+      "full",
+      "off"
+     ],
+     "description": "sandboxed blocks system and network access but can still save, render and export; full can do anything your account can; off runs no scripts"
+    },
+    "assets": {
+     "title": "Asset libraries",
+     "type": "boolean",
+     "description": "Search and import from Poly Haven, Sketchfab and Poly Pizza"
+    },
+    "generate": {
+     "title": "Generate models",
+     "type": "boolean",
+     "description": "Generate models with third-party services, which can cost money"
+    }
+   },
+   "defaultScope": {
+    "code": "sandboxed",
+    "assets": true,
+    "generate": false
+   },
+   "objects": [
+    {
+     "name": "image",
+     "direction": "input",
+     "description": "Picture for generate_3d to model"
+    }
+   ],
+   "subTools": [
+    {
+     "name": "get_addon_status",
+     "description": "Blender's version, whether its addon matches this plugin, and which asset libraries and generators are switched on. Call it once at the start",
+     "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "get_scene_info",
+     "description": "Facts about the scene as text: one header line, then one line per object with the fields you ask for. No image; to see the scene, use look",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "query": {
+        "type": "string",
+        "description": "Name filter across all objects"
+       },
+       "root": {
+        "type": "string",
+        "description": "Object whose hierarchy to list"
+       },
+       "fields": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        },
+        "description": "Per object, default location, size, children, hidden. placement: location, size, ground, rotation, scale, parent. contents: children, hidden, details, materials, modifiers, animation. health: topology, weights. settings adds a line with the file, engine, frame range, resolution, camera, HDRI and unit scale"
+       },
+       "limit": {
+        "type": "integer",
+        "description": "Most object lines (default 20)"
+       }
+      },
+      "required": [],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "look",
+     "description": "See the scene as one image. For counts, sizes and positions, use get_scene_info",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "mode": {
+        "type": "string",
+        "description": "viewport (what the user sees; default), camera, angles (the target from several sides, auto-framed) or frames (a strip over the animation)"
+       },
+       "shading": {
+        "type": "string",
+        "description": "solid, material, rendered (EEVEE and Workbench only), wireframe or xray. Default: the viewport's"
+       },
+       "target": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        },
+        "description": "Object names to frame, children included. Default: every visible object"
+       },
+       "views": {
+        "type": "array",
+        "items": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "array",
+           "items": {
+            "type": "number"
+           }
+          }
+         ]
+        },
+        "description": "For angles: up to 6 of front, back, left, right, top, three_quarter, or [x, y, z] directions from the target towards the eye"
+       },
+       "distance": {
+        "type": "number",
+        "description": "Metres from the target's centre to the eye, for angles and frames views"
+       },
+       "frames": {
+        "type": "array",
+        "items": {
+         "type": "integer"
+        },
+        "description": "For frames: explicit frame numbers"
+       },
+       "frame_count": {
+        "type": "integer",
+        "description": "For frames: how many to sample, 2-12"
+       },
+       "view": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "array",
+          "items": {
+           "type": "number"
+          }
+         }
+        ],
+        "description": "For frames: \"camera\", an angle name or an [x, y, z] direction"
+       },
+       "image": {
+        "type": "string",
+        "description": "Instead of the scene, show an image inside the Blender file, such as \"Render Result\" after a render. Leave mode unset. Paths are refused"
+       },
+       "max_size": {
+        "type": "integer",
+        "description": "Longest side in pixels (default 768)"
+       }
+      },
+      "required": [],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "execute_blender_code",
+     "description": "Run Python in the user's live Blender (bpy, bmesh, mathutils); whatever it prints comes back. Work in small steps. Unless this instance allows full scripts, imports are limited to bpy, bmesh, mathutils and pure-Python stdlib, with no open/eval/exec, no os/subprocess/network and no handlers or timers",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "code": {
+        "type": "string",
+        "description": "The Python to run"
+       }
+      },
+      "required": [
+       "code"
+      ],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "search_assets",
+     "description": "Search a library of existing assets: polyhaven (HDRIs, PBR textures, models, all CC0), sketchfab (user-made models, licences vary) or polypizza (low-poly models)",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "source": {
+        "type": "string",
+        "description": "polyhaven, sketchfab or polypizza"
+       },
+       "query": {
+        "type": "string",
+        "description": "What to look for"
+       },
+       "asset_type": {
+        "type": "string",
+        "description": "polyhaven: hdris, textures, models or all (default)"
+       },
+       "category": {
+        "type": "string",
+        "description": "Category filter"
+       },
+       "attributes": {
+        "type": "object",
+        "description": "Source-specific filters"
+       },
+       "min_size_m": {
+        "type": "number",
+        "description": "Smallest model size in metres"
+       },
+       "licence": {
+        "type": "string",
+        "description": "Licence filter"
+       },
+       "animated": {
+        "type": "boolean",
+        "description": "Only animated models"
+       },
+       "limit": {
+        "type": "integer",
+        "description": "Most results (default 20)"
+       },
+       "previews": {
+        "type": "integer",
+        "description": "How many results to include preview images for (default 0)"
+       }
+      },
+      "required": [
+       "source"
+      ],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "import_asset",
+     "description": "Download an asset found with search_assets and bring it into the scene. Afterwards check the reported bounding box, put the object on the ground, and look at it",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "source": {
+        "type": "string",
+        "description": "polyhaven, sketchfab or polypizza"
+       },
+       "id": {
+        "type": "string",
+        "description": "The asset's id (UID for sketchfab) from search_assets"
+       },
+       "asset_type": {
+        "type": "string",
+        "description": "polyhaven only, required: hdris, textures or models"
+       },
+       "target_size": {
+        "type": "number",
+        "description": "Size in metres of the model's largest dimension. Required for sketchfab, recommended for polypizza"
+       },
+       "apply_to": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        },
+        "description": "polyhaven textures: object names to put the material on"
+       },
+       "resolution": {
+        "type": "string",
+        "description": "polyhaven: 1k (default), 2k, 4k or 8k"
+       },
+       "file_format": {
+        "type": "string",
+        "description": "polyhaven: hdr/exr for HDRIs, jpg/png/exr for textures"
+       }
+      },
+      "required": [
+       "source",
+       "id"
+      ],
+      "additionalProperties": false
+     }
+    },
+    {
+     "name": "generate_3d",
+     "description": "Make one new textured 3D model from a text prompt, or from a picture passed as the call's `image` input, and import it. One object per call, not a whole scene. Each call can cost the user money or a monthly generation. Usually takes 1-3 minutes: if it isn't done in time you get a job handle to pass back",
+     "inputSchema": {
+      "type": "object",
+      "properties": {
+       "prompt": {
+        "type": "string",
+        "description": "Short English description of one object"
+       },
+       "name": {
+        "type": "string",
+        "description": "Object name in the scene"
+       },
+       "provider": {
+        "type": "string",
+        "description": "auto (default), tripo, hunyuan3d, hyper3d or meshy"
+       },
+       "quality": {
+        "type": "string",
+        "description": "standard or high; omit for the user's default"
+       },
+       "bbox_condition": {
+        "type": "array",
+        "items": {
+         "type": "number"
+        },
+        "description": "hyper3d only: [length, width, height] proportions"
+       },
+       "pose_mode": {
+        "type": "string",
+        "description": "meshy only: a-pose or t-pose"
+       },
+       "job": {
+        "type": "string",
+        "description": "A handle from an earlier call, to keep waiting for it"
+       },
+       "wait_seconds": {
+        "type": "integer",
+        "description": "Seconds to wait before handing back a job, at most 45"
+       }
+      },
+      "required": [],
+      "additionalProperties": false
+     }
+    }
+   ]
+  }
+ ]
+}
