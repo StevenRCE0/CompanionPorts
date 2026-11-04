@@ -1,6 +1,88 @@
 {
   "plugins": [
     {
+      "slug": "apple-mail",
+      "name": "Apple Mail",
+      "version": "0.1.0",
+      "summary": "Read your mail in Apple Mail",
+      "description": "Gives KeepTalking read access to the mail in Apple Mail on this Mac: list accounts and mailboxes, list and search messages, read a message and hand its attachments over as KeepTalking files. Powered by apple-mail-mcp by Patrick Freyer (open source, MIT), which talks to Mail through AppleScript.\n\nRead only: nothing here sends, moves, flags or deletes mail. The first call asks macOS to let KT Companion control Mail (Privacy & Security → Automation); no Full Disk Access is needed. Each action instance can be limited to some of your Mail accounts.",
+      "vendor": "keeptalking",
+      "symbol": "envelope",
+      "tint": "#1E88F5",
+      "category": "Communication",
+      "homepage": "https://github.com/patrickfreyer/apple-mail-mcp",
+      "contributors": [
+        {
+          "name": "KeepTalking",
+          "role": "maintainer"
+        },
+        {
+          "name": "Patrick Freyer",
+          "role": "upstream",
+          "url": "https://github.com/patrickfreyer/apple-mail-mcp"
+        }
+      ],
+      "entry": "plugin.py",
+      "kinds": [
+        "apple-mail"
+      ],
+      "path": "plugins/apple-mail",
+      "sha256": "03d65659feb78ba3fb4a2684228728cb523bc9f09120cce0b3fdf09798e3bfdb",
+      "files": [
+        {
+          "path": "manifest.json",
+          "sha256": "2e99463811e12269c2ab1693b816f4b8cdb793cb95e9210e89f8b230ab09db75",
+          "size": 13816
+        },
+        {
+          "path": "plugin.py",
+          "sha256": "381aba45477551a7a73eddbc8b70f50922005a97b1351919346e35ac9ffead8c",
+          "size": 15690
+        }
+      ]
+    },
+    {
+      "slug": "blender",
+      "name": "Blender",
+      "version": "0.1.0",
+      "summary": "Model, look at and script your open Blender",
+      "description": "Lets KeepTalking work in the Blender open on this Mac: read the scene, look at it, run scripts, pull assets from Poly Haven, Sketchfab and Poly Pizza, and generate models. Powered by MCP for Blender by Siddharth Ahuja (open source, MIT); not made by the Blender Foundation.\n\nWhen Blender can't be reached, the plugin installs its addon into your newest Blender and enables it, provided Blender is closed. After that, opening Blender is enough. Upstream's telemetry is switched off. Asset libraries and generators also have to be ticked in the MCP for Blender sidebar in Blender.\n\nEach action instance chooses how scripts run. Sandboxed, the default, blocks system and network access, though Blender can still save, render and export files. Full scripts can do anything your account can. Generating models is off by default because it can cost money, and uses the API keys or subscription set in the addon's preferences.",
+      "vendor": "keeptalking",
+      "symbol": "cube.transparent",
+      "tint": "#EA7600",
+      "category": "Creative",
+      "homepage": "https://github.com/ahujasid/mcp-for-blender",
+      "contributors": [
+        {
+          "name": "KeepTalking",
+          "role": "maintainer"
+        },
+        {
+          "name": "Siddharth Ahuja",
+          "role": "upstream",
+          "url": "https://github.com/ahujasid/mcp-for-blender"
+        }
+      ],
+      "entry": "plugin.py",
+      "kinds": [
+        "blender"
+      ],
+      "path": "plugins/blender",
+      "sha256": "40099f442698b0470cfa4fbc691b5424f72446821515a4567709844026c89a3b",
+      "files": [
+        {
+          "path": "manifest.json",
+          "sha256": "b0ae151f880d46402c9f99c0dc30da4379de21cf2b04df93b62ba61679fc9213",
+          "size": 19530
+        },
+        {
+          "path": "plugin.py",
+          "sha256": "f60078677c8f7ed734a13d874b52abda357d3f5f781a5bef5593d22795633ed6",
+          "size": 12728
+        }
+      ]
+    },
+    {
       "slug": "browser-use",
       "name": "BrowserUse",
       "version": "0.1.0",
