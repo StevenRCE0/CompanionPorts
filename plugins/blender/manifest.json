@@ -2,13 +2,17 @@
  "$schema": "../../schema/plugin.schema.json",
  "name": "Blender",
  "vendor": "keeptalking",
- "version": "0.1.0",
+ "version": "0.2.0",
  "summary": "Model, look at and script your open Blender",
- "description": "Lets KeepTalking work in the Blender open on this Mac: read the scene, look at it, run scripts, pull assets from Poly Haven, Sketchfab and Poly Pizza, and generate models. Powered by MCP for Blender by Siddharth Ahuja (open source, MIT); not made by the Blender Foundation.\n\nWhen Blender can't be reached, the plugin installs its addon into your newest Blender and enables it, provided Blender is closed. After that, opening Blender is enough. Upstream's telemetry is switched off. Asset libraries and generators also have to be ticked in the MCP for Blender sidebar in Blender.\n\nEach action instance chooses how scripts run. Sandboxed, the default, blocks system and network access, though Blender can still save, render and export files. Full scripts can do anything your account can. Generating models is off by default because it can cost money, and uses the API keys or subscription set in the addon's preferences.",
+ "description": "Lets KeepTalking work in the Blender open on this Mac: read the scene, look at it, run scripts, pull assets from Poly Haven, Sketchfab and Poly Pizza, and generate models. Powered by MCP for Blender by Siddharth Ahuja (open source, MIT); not made by the Blender Foundation.\n\nWhen Blender can't be reached, the plugin installs its addon into your newest Blender and enables it, provided Blender is closed. After that, opening Blender is enough. Upstream's telemetry is switched off. Asset libraries and generators also have to be ticked in the MCP for Blender sidebar in Blender.\n\nScripts run unrestricted and can do anything your account can. Generating models is off by default because it can cost money, and uses the API keys or subscription set in the addon's preferences.",
  "symbol": "cube.transparent",
  "tint": "#EA7600",
  "category": "Creative",
  "homepage": "https://github.com/ahujasid/mcp-for-blender",
+ "access": {
+  "level": "full",
+  "summary": "Scripts it runs can do anything your account can: read and change your files, run programs and reach the network."
+ },
  "contributors": [
   {
    "name": "KeepTalking",
@@ -56,7 +60,7 @@
        "import_asset",
        "generate_3d"
       ],
-      "description": "Which operation: get_addon_status — Blender's version, whether its addon matches this plugin, and which asset libraries and generators are switched on. Call it once at the start; get_scene_info — Facts about the scene as text: one header line, then one line per object with the fields you ask for. No image; to see the scene, use look; look — See the scene as one image. For counts, sizes and positions, use get_scene_info; execute_blender_code — Run Python in the user's live Blender (bpy, bmesh, mathutils); whatever it prints comes back. Work in small steps. Unless this instance allows full scripts, imports are limited to bpy, bmesh, mathutils and pure-Python stdlib, with no open/eval/exec, no os/subprocess/network and no handlers or timers; search_assets — Search a library of existing assets: polyhaven (HDRIs, PBR textures, models, all CC0), sketchfab (user-made models, licences vary) or polypizza (low-poly models); import_asset — Download an asset found with search_assets and bring it into the scene. Afterwards check the reported bounding box, put the object on the ground, and look at it; generate_3d — Make one new textured 3D model from a text prompt, or from a picture passed as the call's `image` input, and import it. One object per call, not a whole scene. Each call can cost the user money or a monthly generation. Usually takes 1-3 minutes: if it isn't done in time you get a job handle to pass back"
+      "description": "Which operation: get_addon_status — Blender's version, whether its addon matches this plugin, and which asset libraries and generators are switched on. Call it once at the start; get_scene_info — Facts about the scene as text: one header line, then one line per object with the fields you ask for. No image; to see the scene, use look; look — See the scene as one image. For counts, sizes and positions, use get_scene_info; execute_blender_code — Run Python in the user's live Blender (bpy, bmesh, mathutils); whatever it prints comes back. Work in small steps. Scripts run unrestricted, with the user's full account access; search_assets — Search a library of existing assets: polyhaven (HDRIs, PBR textures, models, all CC0), sketchfab (user-made models, licences vary) or polypizza (low-poly models); import_asset — Download an asset found with search_assets and bring it into the scene. Afterwards check the reported bounding box, put the object on the ground, and look at it; generate_3d — Make one new textured 3D model from a text prompt, or from a picture passed as the call's `image` input, and import it. One object per call, not a whole scene. Each call can cost the user money or a monthly generation. Usually takes 1-3 minutes: if it isn't done in time you get a job handle to pass back"
      },
      "animated": {
       "type": "boolean",
@@ -246,16 +250,6 @@
     ]
    },
    "scopeSchema": {
-    "code": {
-     "title": "Scripts",
-     "type": "string",
-     "enum": [
-      "sandboxed",
-      "full",
-      "off"
-     ],
-     "description": "sandboxed blocks system and network access but can still save, render and export; full can do anything your account can; off runs no scripts"
-    },
     "assets": {
      "title": "Asset libraries",
      "type": "boolean",
@@ -268,7 +262,6 @@
     }
    },
    "defaultScope": {
-    "code": "sandboxed",
     "assets": true,
     "generate": false
    },
@@ -402,7 +395,7 @@
     },
     {
      "name": "execute_blender_code",
-     "description": "Run Python in the user's live Blender (bpy, bmesh, mathutils); whatever it prints comes back. Work in small steps. Unless this instance allows full scripts, imports are limited to bpy, bmesh, mathutils and pure-Python stdlib, with no open/eval/exec, no os/subprocess/network and no handlers or timers",
+     "description": "Run Python in the user's live Blender (bpy, bmesh, mathutils); whatever it prints comes back. Work in small steps. Scripts run unrestricted, with the user's full account access",
      "inputSchema": {
       "type": "object",
       "properties": {

@@ -16,6 +16,15 @@
     "tint": { "$ref": "common.schema.json#/$defs/tint" },
     "category": { "type": "string" },
     "homepage": { "type": "string", "format": "uri" },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "summary"],
+      "properties": {
+        "level": { "enum": ["full"] },
+        "summary": { "type": "string" }
+      }
+    },
     "contributors": { "$ref": "common.schema.json#/$defs/contributors" },
     "entry": { "type": "string", "default": "plugin.py", "pattern": "^[^/]+\\.py$" },
     "role": { "type": "string" },

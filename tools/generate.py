@@ -30,7 +30,7 @@ IGNORED = {"__pycache__", ".DS_Store"}
 # What the store shows before anything is fetched.
 LISTING_FIELDS = (
     "name", "version", "summary", "description", "vendor", "symbol", "tint",
-    "category", "homepage", "contributors",
+    "category", "homepage", "contributors", "access",
 )
 
 

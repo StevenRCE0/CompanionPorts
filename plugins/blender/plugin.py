@@ -10,18 +10,13 @@ How it is wired:
   * when Blender can't be reached, the server's own setup_addon installs the
     addon bundled with the pinned wheel and enables it headlessly (it never
     touches a Blender that is open, and never edits other AI clients' config);
-  * the server has no per-call settings, so sandboxed and unrestricted scripts
-    use separate server processes; only `code: full` ever starts the second.
+  * scripts run unrestricted: upstream's safe mode is off, and the manifest's
+    `access` says so wherever the plugin is listed or added.
 
 Enforcement is dual, as for every KTPP kind: the host gates the call against the
 caller's grant, and this handler re-checks the instance scope before anything
-reaches Blender — whether scripts run and how (`code`), whether third-party
-libraries are reachable (`assets`), and whether paid generation is (`generate`).
-
-The sandbox is upstream's AST allowlist: it blocks os/subprocess/network and
-persistence, but Blender operators that save, render and export stay allowed,
-and it covers this path only — the addon's socket takes raw code from any local
-process.
+reaches Blender — whether third-party libraries are reachable (`assets`), and
+whether paid generation is (`generate`).
 
 Files never travel as paths: generate_3d takes the call's `image` input, and
 look refuses a path where upstream would read any image on this Mac.
@@ -101,18 +96,11 @@ def _coerce(name: str, arguments: dict) -> tuple[dict, str | None]:
 
 
 def _refusal(tool: str, scope: dict) -> str | None:
-    if tool == "execute_blender_code" and _code_mode(scope) == "off":
-        return "Denied by instance scope: this instance may not run scripts in Blender."
     if tool in ASSET_TOOLS and scope.get("assets") is False:
         return "Denied by instance scope: this instance may not use asset libraries."
     if tool == "generate_3d" and scope.get("generate") is not True:
         return "Denied by instance scope: this instance may not generate 3D models, which can cost money."
     return None
-
-
-def _code_mode(scope: dict) -> str:
-    mode = scope.get("code")
-    return mode if mode in ("off", "full") else "sandboxed"
 
 
 def _text(result: dict) -> str:
@@ -144,12 +132,12 @@ class ServerUnavailable(RuntimeError):
 class Server:
     def __init__(self, state_dir: Path):
         self.state_dir = state_dir
-        self.clients: dict[bool, McpStdioClient] = {}
+        self.client: McpStdioClient | None = None
         self._lock = asyncio.Lock()
         self._addon_lock = asyncio.Lock()
         self.addon_prepared = False
 
-    def _env(self, sandboxed: bool) -> dict[str, str]:
+    def _env(self) -> dict[str, str]:
         env = {
             key: value for key, value in os.environ.items()
             if not key.startswith(("BLENDER_MCP_", "BLENDERMCP_"))
@@ -162,23 +150,21 @@ class Server:
             BLENDER_MCP_APPS="0",
             BLENDER_MCP_OPENAI_FORMS="0",
         )
-        if sandboxed:
-            env["BLENDER_MCP_SAFE_MODE"] = "1"
         return env
 
-    async def ensure(self, sandboxed: bool) -> McpStdioClient:
+    async def ensure(self) -> McpStdioClient:
         async with self._lock:
-            client = self.clients.get(sandboxed)
+            client = self.client
             if client is not None and client.running:
                 return client
             if client is not None:
                 await client.close()
-                del self.clients[sandboxed]
-            log = self.state_dir / ("server-sandboxed.log" if sandboxed else "server-full.log")
+                self.client = None
+            log = self.state_dir / "server.log"
             log.write_bytes(b"")
             client = McpStdioClient(
                 [sys.executable, "-I", "-m", "blender_mcp.server"],
-                env=self._env(sandboxed), stderr_path=log, client_name="keeptalking-blender",
+                env=self._env(), stderr_path=log, client_name="keeptalking-blender",
             )
             try:
                 await client.start()
@@ -190,11 +176,11 @@ class Server:
                         "mcp-for-blender isn't installed — use Install for Blender in "
                         "the KT Companion (or: companion.py --provision 'Blender')")
                 raise ServerUnavailable(f"mcp-for-blender did not start: {tail or 'no output'}")
-            self.clients[sandboxed] = client
+            self.client = client
             return client
 
-    async def call(self, route: str, arguments: dict, sandboxed: bool = True) -> dict:
-        client = await self.ensure(sandboxed)
+    async def call(self, route: str, arguments: dict) -> dict:
+        client = await self.ensure()
         result = await client.call_tool(route, arguments, timeout=CALL_TIMEOUT)
         if UNREACHABLE_MARKER in _text(result):
             raise ServerUnavailable(await self.unreachable())
@@ -213,7 +199,7 @@ class Server:
             done = subprocess.run(
                 [sys.executable, "-I", "-c", SETUP_SCRIPT],
                 capture_output=True, text=True, errors="replace",
-                timeout=ADDON_SETUP_TIMEOUT, env=self._env(True),
+                timeout=ADDON_SETUP_TIMEOUT, env=self._env(),
             )
         except (OSError, subprocess.TimeoutExpired) as error:
             return [f"Couldn't set up the Blender addon: {error}."], False
@@ -262,8 +248,7 @@ def make_plugin() -> Plugin:
                     shutil.copyfileobj(reader, writer)
                 forwarded["image"] = str(upload_path)
 
-            sandboxed = tool != "execute_blender_code" or _code_mode(scope) != "full"
-            result = await server.call(tool, forwarded, sandboxed)
+            result = await server.call(tool, forwarded)
         except ServerUnavailable as error:
             return str(error), True
         except McpError as error:
