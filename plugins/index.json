@@ -44,9 +44,9 @@
     {
       "slug": "blender",
       "name": "Blender",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "summary": "Model, look at and script your open Blender",
-      "description": "Lets KeepTalking work in the Blender open on this Mac: read the scene, look at it, run scripts, pull assets from Poly Haven, Sketchfab and Poly Pizza, and generate models. Powered by MCP for Blender by Siddharth Ahuja (open source, MIT); not made by the Blender Foundation.\n\nWhen Blender can't be reached, the plugin installs its addon into your newest Blender and enables it, provided Blender is closed. After that, opening Blender is enough. Upstream's telemetry is switched off. Asset libraries and generators also have to be ticked in the MCP for Blender sidebar in Blender.\n\nEach action instance chooses how scripts run. Sandboxed, the default, blocks system and network access, though Blender can still save, render and export files. Full scripts can do anything your account can. Generating models is off by default because it can cost money, and uses the API keys or subscription set in the addon's preferences.",
+      "description": "Lets KeepTalking work in the Blender open on this Mac: read the scene, look at it, run scripts, pull assets from Poly Haven, Sketchfab and Poly Pizza, and generate models. Powered by MCP for Blender by Siddharth Ahuja (open source, MIT); not made by the Blender Foundation.\n\nWhen Blender can't be reached, the plugin installs its addon into your newest Blender and enables it, provided Blender is closed. After that, opening Blender is enough. Upstream's telemetry is switched off. Asset libraries and generators also have to be ticked in the MCP for Blender sidebar in Blender.\n\nScripts run unrestricted and can do anything your account can. Generating models is off by default because it can cost money, and uses the API keys or subscription set in the addon's preferences.",
       "vendor": "keeptalking",
       "symbol": "cube.transparent",
       "tint": "#EA7600",
@@ -63,22 +63,26 @@
           "url": "https://github.com/ahujasid/mcp-for-blender"
         }
       ],
+      "access": {
+        "level": "full",
+        "summary": "Scripts it runs can do anything your account can: read and change your files, run programs and reach the network."
+      },
       "entry": "plugin.py",
       "kinds": [
         "blender"
       ],
       "path": "plugins/blender",
-      "sha256": "40099f442698b0470cfa4fbc691b5424f72446821515a4567709844026c89a3b",
+      "sha256": "4ed54db6ab2aedfedcc8f1f5c0a1472a411f6abee820c85171afa6713d71fa2c",
       "files": [
         {
           "path": "manifest.json",
-          "sha256": "b0ae151f880d46402c9f99c0dc30da4379de21cf2b04df93b62ba61679fc9213",
-          "size": 19530
+          "sha256": "42d7b7355ea523e1ff03541008678ad92f0e84d1fa46914c5fc328e45a6f84d7",
+          "size": 18978
         },
         {
           "path": "plugin.py",
-          "sha256": "f60078677c8f7ed734a13d874b52abda357d3f5f781a5bef5593d22795633ed6",
-          "size": 12728
+          "sha256": "8915e2bf57ef5420405c0b943e4b93fd8d4cc1ae0edc5039c132704789a0a50d",
+          "size": 11805
         }
       ]
     },
